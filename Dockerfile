@@ -2,10 +2,10 @@
 #
 # - eXo Platform
 
-# Build:    docker build -t exoplatform/exo .
+# Build:    docker build -t exoplatform/exo-enterprise .
 #
-# Run:      docker run -ti --rm --name=exo -p 80:8080 exoplatform/exo
-#           docker run -d --name=exo -p 80:8080 exoplatform/exo
+# Run:      docker run -ti --rm --name=exo -p 80:8080 exoplatform/exo-enterprise
+#           docker run -d --name=exo -p 80:8080 exoplatform/exo-enterprise
 
 FROM  exoplatform/jdk:openjdk-21-ubuntu-2404
 LABEL maintainer="eXo Platform <docker@exoplatform.com>"

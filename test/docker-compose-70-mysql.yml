@@ -15,7 +15,7 @@ services:
     extends:
       file: common-plf70-stack.yml
       service: exo
-    image: exoplatform/exo:develop
+    image: exoplatform/exo-enterprise:develop
     environment:
       EXO_DB_TYPE: mysql
       EXO_ADDONS_LIST:

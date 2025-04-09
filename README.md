@@ -1,22 +1,10 @@
 # eXo Platform Docker image <!-- omit in toc -->
 
-![Docker Stars](https://img.shields.io/docker/stars/exoplatform/exo.svg) - ![Docker Pulls](https://img.shields.io/docker/pulls/exoplatform/exo.svg)
+![Docker Stars](https://img.shields.io/docker/stars/exoplatform/exo-enterprise.svg) - ![Docker Pulls](https://img.shields.io/docker/pulls/exoplatform/exo-enterprise.svg)
 
 | Image                                                       | JDK | eXo Platform             |
 | ----------------------------------------------------------- | --- | ------------------------ |
-| exoplatform/exo:7.0_latest                                  | 21  | 7.0.x Enterprise edition |
-| exoplatform/exo:6.5_latest                                  | 17  | 6.5.x Enterprise edition |
-| exoplatform/exo:6.4_latest                                  | 17  | 6.4.x Enterprise edition |
-| exoplatform/exo:6.3_latest                                  | 11  | 6.3.x Enterprise edition |
-| exoplatform/exo:6.2_latest                                  | 11  | 6.2.x Enterprise edition |
-| exoplatform/exo:6.1_latest                                  | 11  | 6.1.x Enterprise edition |
-| exoplatform/exo:6.0_latest                                  | 11  | 6.0.x Enterprise edition |
-| exoplatform/exo:5.3_latest                                  | 8   | 5.3.x Enterprise edition |
-| exoplatform/exo:5.2_latest ([changelog](./CHANGELOG.md))    | 8   | 5.2.x Enterprise edition |
-| exoplatform/exo:5.1_latest ([changelog](./CHANGELOG-51.md)) | 8   | 5.1.x Enterprise edition |
-| exoplatform/exo:5.0_latest ([changelog](./CHANGELOG-50.md)) | 8   | 5.0.x Enterprise edition |
-| exoplatform/exo:4.4_latest ([changelog](./CHANGELOG-44.md)) | 8   | 4.4.x Enterprise edition |
-| exoplatform/exo:4.3_latest                                  | 8   | 4.3.x Enterprise edition |
+| exoplatform/exo-enterprise:latest                           | 21  | 7.0.x Enterprise edition |
 
 The image is compatible with the following databases system :  `MySQL` (default) / `HSQLDB` / `PostgreSQL`
 
@@ -52,7 +40,7 @@ The image is compatible with the following databases system :  `MySQL` (default)
 All the following options can be defined with standard Docker `-e` parameter
 
 ```bash
-docker run -e MY_ENV_VARIABLE="value" ... exoplatform/exo
+docker run -e MY_ENV_VARIABLE="value" ... exoplatform/exo-enterprise
 ```
 
 or Docker Compose way of defining environment variables
@@ -62,7 +50,7 @@ version: '2'
 services:
 ...
   exo:
-    image: exoplatform/exo
+    image: exoplatform/exo-enterprise
     environment:
 ...
       EXO_ADDONS_LIST: exo-chat
@@ -374,14 +362,14 @@ The eXo Platform license file location must be `/etc/exo/license.xml`
 
 ### exo.properties
 
-*(available since `exoplatform/exo:5.1.0` version only)*
+*(available since `exoplatform/exo-enterprise:5.1.0` version only)*
 
 As specified in [eXo documentation](https://docs.exoplatform.org/PLF50/PLFAdminGuide.Configuration.Properties_reference.html), an external `exo.properties` file can be used to fine tune some aspect of eXo Platform. In that case you have to create an `exo.properties` file on the host filesystem and bind mount it in the docker image :
 
 - Docker way
 
 ```bash
-docker run ... -v /absolute/path/to/exo.properties:/etc/exo/exo.properties:ro ... exoplatform/exo
+docker run ... -v /absolute/path/to/exo.properties:/etc/exo/exo.properties:ro ... exoplatform/exo-enterprise
 ```
 
 - docker-compose.yml way
@@ -391,7 +379,7 @@ version: '2'
 services:
 ...
   exo:
-    image: exoplatform/exo
+    image: exoplatform/exo-enterprise
 ...
     volumes:
       - /absolute/path/to/exo.properties:/etc/exo/exo.properties:ro
@@ -431,7 +419,7 @@ When everything is started you can use :
 
 The simplest way to build this image is to use default values :
 
-    docker build -t exoplatform/exo .
+    docker build -t exoplatform/exo-enterprise .
 
 This will produce an image with the current eXo Platform enterprise version and 3 bundled add-ons : eXo Chat, eXo Tasks, eXo Remote Edit.
 
@@ -448,7 +436,7 @@ If you want to bundle a particular list of add-ons :
 ```bash
 docker build \
   --build-arg ADDONS="exo-chat exo-staging-extension:2.6.0" \
-  -t exoplatform/exo:my_version .
+  -t exoplatform/exo-enterprise:my_version .
 ```
 
 If you want to build a particular version of eXo Platform just pass the good arguments :
@@ -456,7 +444,7 @@ If you want to build a particular version of eXo Platform just pass the good arg
 ```bash
 docker build \
   --build-arg EXO_VERSION=4.3.1 \
-  -t exoplatform/exo:4.3.1 .
+  -t exoplatform/exo-enterprise:4.3.1 .
 ```
 
 If you want to specify an alternate public download url :
@@ -464,7 +452,7 @@ If you want to specify an alternate public download url :
 ```bash
 docker build \
   --build-arg DOWNLOAD_URL=http://my.host/my-own-download-link.zip \
-  -t exoplatform/exo:my_version .
+  -t exoplatform/exo-enterprise:my_version .
 ```
 
 If you want to specify an alternate authenticated download url :
@@ -473,7 +461,7 @@ If you want to specify an alternate authenticated download url :
 docker build \
   --build-arg DOWNLOAD_URL=http://my.host/my-own-download-link.zip \
   --build-arg DOWNLOAD_USER=my-username
-  -t exoplatform/exo:my_version .
+  -t exoplatform/exo-enterprise:my_version .
 ```
 
 The password will be required during the build at the download step.
