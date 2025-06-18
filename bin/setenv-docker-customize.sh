@@ -123,6 +123,7 @@ esac
 
 [ -z "${EXO_HTTP_THREAD_MIN}" ] && EXO_HTTP_THREAD_MIN="10"
 [ -z "${EXO_HTTP_THREAD_MAX}" ] && EXO_HTTP_THREAD_MAX="200"
+[ -z "${EXO_HTTP_HEADER_MAX}" ] && EXO_HTTP_HEADER_MAX="8192"
 
 [ -z "${EXO_MAIL_FROM}" ] && EXO_MAIL_FROM="noreply@exoplatform.com"
 [ -z "${EXO_MAIL_SMTP_HOST}" ] && EXO_MAIL_SMTP_HOST="localhost"
@@ -348,6 +349,7 @@ else
   # Tomcat HTTP Thread pool configuration
   xmlstarlet ed -L -s "/Server/Service/Connector" -t attr -n "maxThreads" -v "${EXO_HTTP_THREAD_MAX}" \
     -s "/Server/Service/Connector" -t attr -n "minSpareThreads" -v "${EXO_HTTP_THREAD_MIN}" \
+    -s "/Server/Service/Connector" -t attr -n "maxHttpHeaderSize" -v "${EXO_HTTP_HEADER_MAX}" \
     /opt/exo/conf/server.xml || {
     echo "ERROR during xmlstarlet processing (adding Connector proxyName)"
     exit 1
