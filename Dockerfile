@@ -22,8 +22,8 @@ RUN apt-get -qq update && \
   apt-get -qq -y clean && \
   rm -rf /var/lib/apt/lists/*
 # Check if the released binary was modified and make the build fail if it is the case
-RUN wget -nv -q -O /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_amd64 && \
-  echo "f452354b572ddcb1155f9173a180ab34 /usr/bin/yq" | md5sum -c - \
+RUN wget -nv -q -O /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 && \
+  echo "eb442bca81bdceaf4f6314ee303c24e9 /usr/bin/yq" | md5sum -c - \
   || { \
   echo "ERROR: the [/usr/bin/yq] binary downloaded from a github release was modified while is should not !!"; \
   return 1; \
