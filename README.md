@@ -4,7 +4,8 @@
 
 | Image                                                       | JDK | eXo Platform             |
 | ----------------------------------------------------------- | --- | ------------------------ |
-| exoplatform/exo-enterprise:latest                           | 21  | 7.0.x Enterprise edition |
+| exoplatform/exo-enterprise:latest                           | 21  | 7.1.x Enterprise edition |
+| exoplatform/exo-enterprise:7.0_latest                       | 21  | 7.0.x Enterprise edition |
 
 The image is compatible with the following databases system :  `MySQL` (default) / `HSQLDB` / `PostgreSQL`
 
