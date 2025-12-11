@@ -204,6 +204,10 @@ EXO_ES_URL="${EXO_ES_SCHEME}://${EXO_ES_HOST}:${EXO_ES_PORT}"
 
 [ -z "${EXO_SESSION_TIMEOUT}" ] && EXO_SESSION_TIMEOUT=30
 
+[ -z "${EXO_CACERTS}" ] && EXO_CACERTS=""
+[ -z "${EXO_CACERTS_STOREPASS}" ] && EXO_CACERTS_STOREPASS="changeit"
+
+
 set -u		# REACTIVATE unbound variable check
 
 # -----------------------------------------------------------------------------
@@ -756,7 +760,7 @@ fi
 _custKeyStoreDir=/opt/exo/.custkeystore
 _custKeyStoreFile=${_custKeyStoreDir}/exo.jks
 _hashStoreDir="/opt/exo/.cert_hashes"
-_keytoolPass="changeit"
+_keytoolPass="${EXO_CACERTS_STOREPASS}"
 # self-signed certificates authorization
 if [ -z "${EXO_SELFSIGNEDCERTS_HOSTS:-}" ]; then
   echo "# no self-signed certificate to be imported from EXO_SELFSIGNEDCERTS_HOSTS environment variable."
@@ -766,7 +770,7 @@ else
   # Copy JDK cacerts to the custom keystore if not already done
   if [ ! -f "$_custKeyStoreFile" ]; then
     echo "# Copying JDK cacerts keystore to custom one to be used for self-signed certificates import (rootless)..."
-    cp -f "$JAVA_HOME/lib/security/cacerts" "$_custKeyStoreFile"
+    cp -f "${EXO_CACERTS:-$JAVA_HOME/lib/security/cacerts}" "$_custKeyStoreFile"
     echo "INFO: Custom keystore initialized."
   else
     echo "# Custom keystore already initialized."
@@ -835,7 +839,10 @@ echo "# ------------------------------------ #"
 # ---------------------------------------------------------------------------------
 if [ -f "${_custKeyStoreFile}" ]; then
   CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStore=${_custKeyStoreFile}"
-  CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStorePassword=changeit"
+  CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStorePassword=${EXO_CACERTS_STOREPASS}"
+elif [ -f "${EXO_CACERTS}" ]; then
+  CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStore=${EXO_CACERTS}"
+  CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStorePassword=${EXO_CACERTS_STOREPASS}"
 fi
 # -----------------------------------------------------------------------------
 # Change chat add-on security token at each start
