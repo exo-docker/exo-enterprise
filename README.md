@@ -320,6 +320,8 @@ The following environment variables should be passed to the container in order t
 | --------------------------------- | --------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | EXO_SELFSIGNEDCERTS_HOSTS         | NO        | -             | commas separated list of self-certificates hostname to import to keystore                               |
 | EXO_SELFSIGNEDCERTS_STRICT_MODE   | NO        | `false`       | Strict mode for importing certificates (Abort the server startup if ssl certificate import fails) |
+| EXO_CACERTS                       | NO        | ``            | Path to the custom Java cacerts keystore |
+| EXO_CACERTS_STOREPASS             | NO        | `changeit`    | Custom Java cacerts store password |
 
 ### Rememberme Token Expiration
 

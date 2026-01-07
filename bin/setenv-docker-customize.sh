@@ -203,6 +203,9 @@ EXO_ES_URL="${EXO_ES_SCHEME}://${EXO_ES_HOST}:${EXO_ES_PORT}"
 
 [ -z "${EXO_SESSION_TIMEOUT}" ] && EXO_SESSION_TIMEOUT=30
 
+[ -z "${EXO_CACERTS}" ] && EXO_CACERTS=""
+[ -z "${EXO_CACERTS_STOREPASS}" ] && EXO_CACERTS_STOREPASS="changeit"
+
 set -u		# REACTIVATE unbound variable check
 
 # -----------------------------------------------------------------------------
@@ -613,6 +616,106 @@ else
 fi
 
 # -----------------------------------------------------------------------------
+# Import self-signed certificates to Keystore
+# -----------------------------------------------------------------------------
+_custKeyStoreDir=/opt/exo/.custkeystore
+_custKeyStoreFile=${_custKeyStoreDir}/exo-truststore
+_hashStoreDir="/opt/exo/.cert_hashes"
+_keytoolPass="${EXO_CACERTS_STOREPASS}"
+# self-signed certificates authorization
+if [ -z "${EXO_SELFSIGNEDCERTS_HOSTS:-}" ]; then
+  echo "# no self-signed certificate to be imported from EXO_SELFSIGNEDCERTS_HOSTS environment variable."
+else
+echo "# ------------------------------------ #"
+echo "# eXo self-signed certificates import start ..."
+echo "# ------------------------------------ #"
+  mkdir -p ${_custKeyStoreDir}
+  mkdir -p ${_hashStoreDir}
+  # Copy JDK cacerts to the custom keystore if not already done
+  if [ ! -f "$_custKeyStoreFile" ]; then
+    echo "# Copying JDK cacerts keystore to custom one to be used for self-signed certificates import (rootless)..."
+    cp -f "${EXO_CACERTS:-$JAVA_HOME/lib/security/cacerts}" "$_custKeyStoreFile"
+    echo "INFO: Custom keystore initialized."
+  else
+    echo "# Custom keystore already initialized."
+  fi
+  echo "# Importing self-signed certificates from EXO_SELFSIGNEDCERTS_HOSTS environment variable:"
+  echo ${EXO_SELFSIGNEDCERTS_HOSTS} | tr ',' '\n' | while read _selfSignedCertHost ; do
+    if [ -n "${_selfSignedCertHost}" ]; then
+      # Authorize self-signed certificate
+      _sslPort=':443'
+      if echo "${_selfSignedCertHost}" | grep -q ':'; then
+        _sslPort=''
+      fi
+      _sanitizedHostName=$(echo "${_selfSignedCertHost}" | cut -d ':' -f1)
+      _tempCertFile="/tmp/${_sanitizedHostName}.crt"
+      _hashFile="${_hashStoreDir}/${_sanitizedHostName}.hash"
+      echo "INFO: Fetching certificate from ${_selfSignedCertHost}${_sslPort}..."
+      echo -n | openssl s_client -connect "${_selfSignedCertHost}${_sslPort}" 2>/dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "${_tempCertFile}"
+      if [ -s "$_tempCertFile" ]; then
+        # Calculate the hash of the certificate
+        _currentHash=$(openssl x509 -in "${_tempCertFile}" -noout -sha256 -fingerprint | sed 's/://g' | awk -F= '{print $2}')
+        # Check if the hash matches the stored hash
+        if [ -f "$_hashFile" ] && [ "$_currentHash" = "$(cat "$_hashFile")" ]; then
+          echo "INFO: Certificate for ${_selfSignedCertHost}${_sslPort} is unchanged. Skipping import."
+        else
+          if keytool -list -keystore "$_custKeyStoreFile" -storepass "$_keytoolPass" -alias "$_sanitizedHostName" > /dev/null 2>&1; then
+            keytool -delete -alias "$_sanitizedHostName" -keystore "$_custKeyStoreFile" -storepass "$_keytoolPass" -noprompt 2>/dev/null
+            echo "INFO: Importing updated certificate for ${_selfSignedCertHost}${_sslPort}..."
+          else 
+            echo "INFO: Importing certificate for ${_selfSignedCertHost}${_sslPort}..."
+          fi
+          keytool -import -trustcacerts -keystore "$_custKeyStoreFile" -storepass "$_keytoolPass" -noprompt -alias "$_sanitizedHostName" -file "$_tempCertFile"
+          if [ $? -eq 0 ]; then
+            echo "$_currentHash" > "$_hashFile"
+            echo "INFO: Certificate for ${_selfSignedCertHost}${_sslPort} imported successfully."
+          else
+            echo "ERROR: Failed to import certificate for ${_selfSignedCertHost}${_sslPort}."
+            exit 1
+          fi
+        fi
+        # Clean up temporary certificate file
+        rm -f "$_tempCertFile"
+      else
+        rm -f "$_tempCertFile"
+        if [ "${EXO_SELFSIGNEDCERTS_STRICT_MODE:-false}" = "false" ] && [ -f "$_hashFile" ]; then
+          echo "WARNING: Unable to fetch certificate for ${_selfSignedCertHost}${_sslPort}."
+          echo "  The connection might have failed, or the certificate could not be retrieved."
+          echo "  However, the certificate hash was found. Proceeding with the current certificate."
+        else
+          echo "Error: Unable to fetch certificate for ${_selfSignedCertHost}${_sslPort} (Strict Mode: ${EXO_SELFSIGNEDCERTS_STRICT_MODE:-false}). Abort!"
+          exit 1
+        fi
+      fi
+    fi
+  done
+  if [ $? != 0 ]; then
+    echo "[ERROR] An error during importing self-signed certificates phase aborted eXo startup !"
+    exit 1
+  fi
+fi
+echo "# ------------------------------------ #"
+echo "# eXo self-signed certificates import done."
+echo "# ------------------------------------ #"
+
+# ---------------------------------------------------------------------------------
+# Configure JVM trustStore globally and for Tomcat if custom CA certs are provided
+# ---------------------------------------------------------------------------------
+
+if [ -f "${_custKeyStoreFile}" ]; then
+  _TRUSTSTORE="${_custKeyStoreFile}"
+  _TRUSTSTORE_PASS="${EXO_CACERTS_STOREPASS}"
+elif [ -f "${EXO_CACERTS}" ]; then
+  _TRUSTSTORE="${EXO_CACERTS}"
+  _TRUSTSTORE_PASS="${EXO_CACERTS_STOREPASS}"
+fi
+
+if [ -n "${_TRUSTSTORE}" ]; then
+  export JDK_JAVA_OPTIONS="${JDK_JAVA_OPTIONS:-} -Djavax.net.ssl.trustStore=${_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${_TRUSTSTORE_PASS}"
+  CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStore=${_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${_TRUSTSTORE_PASS}"
+fi
+
+# -----------------------------------------------------------------------------
 # Install add-ons if needed when the container is created for the first time
 # -----------------------------------------------------------------------------
 if [ -f /opt/exo/_done.addons ]; then
@@ -748,93 +851,6 @@ else
   touch /opt/exo/_done.patches
 fi
 
-# -----------------------------------------------------------------------------
-# Import self-signed certificates to Keystore
-# -----------------------------------------------------------------------------
-_custKeyStoreDir=/opt/exo/.custkeystore
-_custKeyStoreFile=${_custKeyStoreDir}/exo.jks
-_hashStoreDir="/opt/exo/.cert_hashes"
-_keytoolPass="changeit"
-# self-signed certificates authorization
-if [ -z "${EXO_SELFSIGNEDCERTS_HOSTS:-}" ]; then
-  echo "# no self-signed certificate to be imported from EXO_SELFSIGNEDCERTS_HOSTS environment variable."
-else
-  mkdir -p ${_custKeyStoreDir}
-  mkdir -p ${_hashStoreDir}
-  # Copy JDK cacerts to the custom keystore if not already done
-  if [ ! -f "$_custKeyStoreFile" ]; then
-    echo "# Copying JDK cacerts keystore to custom one to be used for self-signed certificates import (rootless)..."
-    cp -f "$JAVA_HOME/lib/security/cacerts" "$_custKeyStoreFile"
-    echo "INFO: Custom keystore initialized."
-  else
-    echo "# Custom keystore already initialized."
-  fi
-  echo "# Importing self-signed certificates from EXO_SELFSIGNEDCERTS_HOSTS environment variable:"
-  echo ${EXO_SELFSIGNEDCERTS_HOSTS} | tr ',' '\n' | while read _selfSignedCertHost ; do
-    if [ -n "${_selfSignedCertHost}" ]; then
-      # Authorize self-signed certificate
-      _sslPort=':443'
-      if echo "${_selfSignedCertHost}" | grep -q ':'; then
-        _sslPort=''
-      fi
-      _sanitizedHostName=$(echo "${_selfSignedCertHost}" | cut -d ':' -f1)
-      _tempCertFile="/tmp/${_sanitizedHostName}.crt"
-      _hashFile="${_hashStoreDir}/${_sanitizedHostName}.hash"
-      echo "INFO: Fetching certificate from ${_selfSignedCertHost}${_sslPort}..."
-      echo -n | openssl s_client -connect "${_selfSignedCertHost}${_sslPort}" 2>/dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "${_tempCertFile}"
-      if [ -s "$_tempCertFile" ]; then
-        # Calculate the hash of the certificate
-        _currentHash=$(openssl x509 -in "${_tempCertFile}" -noout -sha256 -fingerprint | sed 's/://g' | awk -F= '{print $2}')
-        # Check if the hash matches the stored hash
-        if [ -f "$_hashFile" ] && [ "$_currentHash" = "$(cat "$_hashFile")" ]; then
-          echo "INFO: Certificate for ${_selfSignedCertHost}${_sslPort} is unchanged. Skipping import."
-        else
-          if keytool -list -keystore "$_custKeyStoreFile" -storepass "$_keytoolPass" -alias "$_sanitizedHostName" > /dev/null 2>&1; then
-            keytool -delete -alias "$_sanitizedHostName" -keystore "$_custKeyStoreFile" -storepass "$_keytoolPass" -noprompt 2>/dev/null
-            echo "INFO: Importing updated certificate for ${_selfSignedCertHost}${_sslPort}..."
-          else 
-            echo "INFO: Importing certificate for ${_selfSignedCertHost}${_sslPort}..."
-          fi
-          keytool -import -trustcacerts -keystore "$_custKeyStoreFile" -storepass "$_keytoolPass" -noprompt -alias "$_sanitizedHostName" -file "$_tempCertFile"
-          if [ $? -eq 0 ]; then
-            echo "$_currentHash" > "$_hashFile"
-            echo "INFO: Certificate for ${_selfSignedCertHost}${_sslPort} imported successfully."
-          else
-            echo "ERROR: Failed to import certificate for ${_selfSignedCertHost}${_sslPort}."
-            exit 1
-          fi
-        fi
-        # Clean up temporary certificate file
-        rm -f "$_tempCertFile"
-      else
-        rm -f "$_tempCertFile"
-        if [ "${EXO_SELFSIGNEDCERTS_STRICT_MODE:-false}" = "false" ] && [ -f "$_hashFile" ]; then
-          echo "WARNING: Unable to fetch certificate for ${_selfSignedCertHost}${_sslPort}."
-          echo "  The connection might have failed, or the certificate could not be retrieved."
-          echo "  However, the certificate hash was found. Proceeding with the current certificate."
-        else
-          echo "Error: Unable to fetch certificate for ${_selfSignedCertHost}${_sslPort} (Strict Mode: ${EXO_SELFSIGNEDCERTS_STRICT_MODE:-false}). Abort!"
-          exit 1
-        fi
-      fi
-    fi
-  done
-  if [ $? != 0 ]; then
-    echo "[ERROR] An error during importing self-signed certificates phase aborted eXo startup !"
-    exit 1
-  fi
-fi
-echo "# ------------------------------------ #"
-echo "# eXo self-signed certificates import done."
-echo "# ------------------------------------ #"
-
-# ---------------------------------------------------------------------------------
-# Configure tomcat to use custom ca certs each start if custom keystore is provided
-# ---------------------------------------------------------------------------------
-if [ -f "${_custKeyStoreFile}" ]; then
-  CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStore=${_custKeyStoreFile}"
-  CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStorePassword=changeit"
-fi
 # -----------------------------------------------------------------------------
 # Change chat add-on security token at each start
 # -----------------------------------------------------------------------------
