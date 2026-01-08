@@ -712,7 +712,7 @@ elif [ -f "${EXO_CACERTS}" ]; then
   _TRUSTSTORE_PASS="${EXO_CACERTS_STOREPASS}"
 fi
 
-if [ -n "${_TRUSTSTORE}" ]; then
+if [ -n "${_TRUSTSTORE:-}" ]; then
   export JDK_JAVA_OPTIONS="${JDK_JAVA_OPTIONS:-} -Djavax.net.ssl.trustStore=${_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${_TRUSTSTORE_PASS}"
   CATALINA_OPTS="${CATALINA_OPTS:-} -Djavax.net.ssl.trustStore=${_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${_TRUSTSTORE_PASS}"
 fi
