@@ -8,7 +8,11 @@
 #           docker run -d --name=exo -p 80:8080 exoplatform/exo-enterprise
 
 FROM  azul/zulu-openjdk-alpine:21
-LABEL maintainer="eXo Platform <docker@exoplatform.com>"
+
+LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
+      org.opencontainers.image.title="eXo Platform Enterprise" \
+      org.opencontainers.image.description="Docker image for eXo Platform Enterprise Edition" \
+      org.opencontainers.image.vendor="eXo Platform"
 
 # Install the needed packages
 RUN apk update && \
@@ -17,7 +21,7 @@ RUN apk update && \
   apk --no-cache add msttcorefonts-installer fontconfig && \
   update-ms-fonts &&  fc-cache -f
 
-RUN wget -nv -q -O /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 && \
+RUN wget -nv -q -O /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_linux_amd64 && \
   chmod a+x /usr/bin/yq
 
 RUN sed -i "s/999/99/" /etc/group
