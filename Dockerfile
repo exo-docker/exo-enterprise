@@ -14,8 +14,8 @@ LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.description="Docker image for eXo Platform Enterprise Edition" \
       org.opencontainers.image.vendor="eXo Platform"
 
-ARG YQ_VERSION=v4.50.1
-ARG YQ_SHA256=c7a1278e6bbc4924f41b56db838086c39d13ee25dcb22089e7fbf16ac901f0d4
+ARG YQ_VERSION=v4.52.2
+ARG YQ_SHA256=a74bd266990339e0c48a2103534aef692abf99f19390d12c2b0ce6830385c459
 
 # Build Arguments and environment variables
 ARG EXO_VERSION=7.1.2-RC01
