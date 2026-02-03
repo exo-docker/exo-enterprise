@@ -14,6 +14,9 @@ LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.description="Docker image for eXo Platform Enterprise Edition" \
       org.opencontainers.image.vendor="eXo Platform"
 
+ARG YQ_VERSION=v4.52.2
+ARG YQ_SHA256=a74bd266990339e0c48a2103534aef692abf99f19390d12c2b0ce6830385c459
+
 # Install the needed packages
 RUN apk update && \
   apk upgrade && \
@@ -21,8 +24,13 @@ RUN apk update && \
   apk --no-cache add msttcorefonts-installer fontconfig && \
   update-ms-fonts &&  fc-cache -f
 
-RUN wget -nv -q -O /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.50.1/yq_linux_amd64 && \
-  chmod a+x /usr/bin/yq
+  # Check if the released binary was modified and make the build fail if it is the case
+RUN curl -fsSL -o /usr/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" && \
+  echo "${YQ_SHA256} /usr/bin/yq" | sha256sum -c - \
+  || { \
+  echo "ERROR: the [/usr/bin/yq] binary downloaded from a github release was modified while is should not !!"; \
+  return 1; \
+  } && chmod a+x /usr/bin/yq
 
 RUN sed -i "s/999/99/" /etc/group
 
