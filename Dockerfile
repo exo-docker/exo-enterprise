@@ -7,7 +7,7 @@
 # Run:      docker run -ti --rm --name=exo -p 80:8080 exoplatform/exo-enterprise
 #           docker run -d --name=exo -p 80:8080 exoplatform/exo-enterprise
 
-FROM  exoplatform/jdk:openjdk-21-ubuntu-2404
+FROM  exoplatform/jdk:openjdk-21-debian13
 
 LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.title="eXo Platform Enterprise" \
@@ -43,6 +43,11 @@ ENV EXO_APP_DIR=/opt/exo \
 # add our user and group first to make sure their IDs get assigned consistently
 RUN useradd --create-home -u 999 --user-group --shell /bin/bash ${EXO_USER}
 
+RUN DEBIAN_CODENAME=$(lsb_release -cs) \
+ && echo "deb http://deb.debian.org/debian $DEBIAN_CODENAME main contrib non-free" > /etc/apt/sources.list \
+ && echo "deb http://deb.debian.org/debian ${DEBIAN_CODENAME}-updates main contrib non-free" >> /etc/apt/sources.list \
+ && echo "deb http://security.debian.org/debian-security ${DEBIAN_CODENAME}-security main contrib non-free" >> /etc/apt/sources.list
+
 # Install the needed packages
 RUN apt-get -qq update && \
   apt-get -qq -y upgrade ${_APT_OPTIONS} && \
@@ -56,10 +61,13 @@ RUN apt-get -qq update && \
     unzip \
     ca-certificates \
     ttf-mscorefonts-installer \
-    fontconfig && \
+    fontconfig \
+    locales && \
   apt-get -qq -y autoremove && \
   apt-get -qq -y clean && \
   rm -rf /var/lib/apt/lists/* && \
+  sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+  locale-gen && \
   # Check if the released binary was modified and make the build fail if it is the case
   curl -fsSL -o /usr/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" && \
   echo "${YQ_SHA256} /usr/bin/yq" | sha256sum -c - \
@@ -67,6 +75,10 @@ RUN apt-get -qq update && \
   echo "ERROR: the [/usr/bin/yq] binary downloaded from a github release was modified while is should not !!"; \
   return 1; \
   } && chmod a+x /usr/bin/yq
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
 
 # Create needed directories
 RUN mkdir -p ${EXO_DATA_DIR}         && chown ${EXO_USER}:${EXO_GROUP} ${EXO_DATA_DIR} && \
