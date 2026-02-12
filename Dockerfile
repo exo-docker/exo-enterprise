@@ -35,7 +35,7 @@ RUN curl -fsSL -o /usr/bin/yq "https://github.com/mikefarah/yq/releases/download
 RUN sed -i "s/999/99/" /etc/group
 
 # Build Arguments and environment variables
-ARG EXO_VERSION=7.2.0-M15
+ARG EXO_VERSION=7.2.0-M16
 
 # this allow to specify an eXo Platform download url
 ARG DOWNLOAD_URL
