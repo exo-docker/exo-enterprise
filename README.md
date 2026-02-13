@@ -10,6 +10,7 @@
 The image is compatible with the following databases system :  `MySQL` (default) / `HSQLDB` / `PostgreSQL`
 
 - [Configuration options](#configuration-options)
+  - [Secret / Sensitive Environment Variables](#secret--sensitive-environment-variables)
   - [Add-ons](#add-ons)
   - [Patches](#patches)
   - [JVM](#jvm)
@@ -60,6 +61,54 @@ services:
       EXO_PATCHES_CATALOG_URL:
       EXO_ES_HOST: search
 ...
+```
+
+### Secret / Sensitive Environment Variables
+
+Some environment variables contain sensitive information such as passwords, API keys, or private keys. Hardcoding these values in your Docker commands or Compose files is **not recommended**. You can manage them securely using one of the following approaches:
+
+- **Docker secrets** (recommended for Swarm / Compose v3+), accessible inside the container as files.
+- **Environment files** (`.env`) with restricted permissions, referenced in Compose.
+- **_SEC_ / _FILE convention**, where variables can load values from files.
+
+#### `_SEC_` Prefix and `_FILE` Suffix
+
+For sensitive variables, you can use the `_SEC_` prefix in combination with `_FILE`. The container will automatically read the file content and populate the corresponding **regular environment variable**.
+
+**Example variables:**
+
+```text
+EXO_DB_PASSWORD
+EXO_SEC_DB_PASSWORD_FILE=/run/secrets/exo_db_password
+
+EXO_MAIL_SMTP_PASSWORD
+EXO_SEC_MAIL_SMTP_PASSWORD_FILE=/run/secrets/exo_mail_smtp_password
+
+EXO_JMX_PASSWORD
+EXO_SEC_JMX_PASSWORD_FILE=/run/secrets/exo_jmx_password
+
+EXO_REWARDS_WALLET_ADMIN_KEY
+EXO_SEC_REWARDS_WALLET_ADMIN_KEY_FILE=/run/secrets/exo_rewards_wallet_key
+
+EXO_CHAT_SERVER_PASSPHRASE
+EXO_SEC_CHAT_SERVER_PASSPHRASE_FILE=/run/secrets/exo_chat_passphrase
+```
+
+**How it works:**
+
+The container checks if the _SEC_ + _FILE variant exists.
+
+If yes, it reads the content of the file and sets the corresponding regular environment variable (without _SEC_ and _FILE) automatically.
+
+This allows your application to always use standard environment variable names, while keeping secrets securely stored in files.
+
+```bash
+# File /run/secrets/exo_db_password contains "supersecret"
+EXO_SEC_DB_PASSWORD_FILE=/run/secrets/exo_db_password
+```
+Inside the container, the following will be set automatically:
+```bash
+EXO_DB_PASSWORD="supersecret"
 ```
 
 ### Add-ons

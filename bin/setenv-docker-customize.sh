@@ -58,6 +58,24 @@ check_exo_properties() {
 }
 
 # -----------------------------------------------------------------------------
+# Load secrets from files if EXO_SEC_*_FILE environment variables are defined
+# -----------------------------------------------------------------------------
+for env_var in $(env | grep -E '^EXO_SEC_.*_FILE=' | cut -d= -f1); do
+  file_path="${!env_var}"
+  if [ -f "$file_path" ]; then
+    # Replace _SEC_ with _ to restore original variable name
+    target_var="${env_var/_SEC_/_}"
+    # Remove trailing _FILE
+    target_var="${target_var%_FILE}"
+    # Read the file content and export it as target variable
+    export "$target_var"="$(< "$file_path")"
+    echo "INFO: Loaded secret from ${file_path} into ${target_var}"
+  else
+    echo "WARNING: Secret file ${file_path} for ${env_var} does not exist!"
+  fi
+done
+
+# -----------------------------------------------------------------------------
 # Check configuration variables and add default values when needed
 # -----------------------------------------------------------------------------
 set +u		# DEACTIVATE unbound variable check
