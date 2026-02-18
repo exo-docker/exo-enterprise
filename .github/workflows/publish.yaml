@@ -3,7 +3,7 @@ name: Create and publish a Docker image
 on:
   push:
     tags:
-      - '[6-9].[0-9].[0-9](-(M|RC|CP)[0-9][0-9])?_[0-9]'
+      - '*'
     branches: [ 7.1.x ]
 env:
   BRANCH_BUILD_TAGS: "7.1_latest"
@@ -18,7 +18,12 @@ jobs:
         id: detect-push-event
         run: |
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo "This is a tag push (${GITHUB_REF#refs/tags/})"
+            TAG="${GITHUB_REF#refs/tags/}"
+            echo "This is a tag push ($TAG)"
+            if [[ ! "$TAG" =~ ^[6-9]\.[0-9]\.[0-9](-(M|RC|CP)[0-9]{2})?_[0-9]$ ]]; then
+              echo "❌ Invalid tag format: $TAG"
+              exit 1
+            fi
             echo "Building docker tag: ${GITHUB_REF#refs/tags/}"
             echo "buildTags=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           elif [[ $GITHUB_REF == refs/heads/* ]]; then
