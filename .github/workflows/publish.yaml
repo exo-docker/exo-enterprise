@@ -1,36 +1,42 @@
-name: Create and publish CI/CD Docker image
+name: Create and publish a Docker image
 
 on:
   push:
     tags:
-      - '[6-9].[0-9].[0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9]'
+      - '[6-9].[0-9].[0-9](-(M|RC|CP)[0-9][0-9])?_[0-9]'
+    branches: [ 7.1.x ]
 env:
-  DOCKERHUB_IMAGE_NAME: 'exoplatform/exo-enterprise'
-
+  BRANCH_BUILD_TAGS: "7.1_latest"
 jobs:
-  build-and-push-image:
+  parse-docker-build-env:
+    name: 'Parse Docker Build Environment'
+    runs-on: ubuntu-latest
+    outputs:
+      buildTags: ${{ steps.detect-push-event.outputs.buildTags }}
+    steps:
+      - name: Check if push is a tag or branch
+        id: detect-push-event
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo "This is a tag push (${GITHUB_REF#refs/tags/})"
+            echo "Building docker tag: ${GITHUB_REF#refs/tags/}"
+            echo "buildTags=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          elif [[ $GITHUB_REF == refs/heads/* ]]; then
+            echo "This is a branch push (${GITHUB_REF#refs/heads/})"
+            echo "Building docker tags: ${{ env.BRANCH_BUILD_TAGS }}"
+            echo "buildTags=${{ env.BRANCH_BUILD_TAGS }}" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown push type"
+            exit 1
+          fi
+  build-dockerhub-image:
+    name: "Build Docker Images to DockerHub Registry"
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKERHUB_IMAGE_NAME }}
-
-      - name: Build and push Docker image to Dockerhub
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+    - uses: exo-actions/buildDockerImage-action@v1
+      with:
+        dockerImage: "exoplatform/exo-enterprise"
+        dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
