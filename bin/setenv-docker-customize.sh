@@ -59,17 +59,31 @@ check_exo_properties() {
 
 # -----------------------------------------------------------------------------
 # Load secrets from files if EXO_SEC_*_FILE environment variables are defined
+# Priority: Direct ENV > File (unless EXO_SEC_*_FILE_FORCE is set)
 # -----------------------------------------------------------------------------
 for env_var in $(env | grep -E '^EXO_SEC_.*_FILE=' | cut -d= -f1); do
   file_path="${!env_var}"
+  # Replace _SEC_ with _ to restore original variable name
+  target_var="${env_var/_SEC_/_}"
+  # Remove trailing _FILE
+  target_var="${target_var%_FILE}"
+  # Check if direct variable already exists
+  direct_var_exists=$(env | grep -E "^${target_var}=" || true)
+  # Check if force override is requested
+  force_var="${env_var}_FORCE"
+  force_override="${!force_var:-false}"
   if [ -f "$file_path" ]; then
-    # Replace _SEC_ with _ to restore original variable name
-    target_var="${env_var/_SEC_/_}"
-    # Remove trailing _FILE
-    target_var="${target_var%_FILE}"
-    # Read the file content and export it as target variable
-    export "$target_var"="$(< "$file_path")"
-    echo "INFO: Loaded secret from ${file_path} into ${target_var}"
+    if [ -n "$direct_var_exists" ] && [ "$force_override" != "true" ]; then
+      echo "INFO: ${target_var} already set via environment, skipping file ${file_path}"
+      echo "      (use ${force_var}=true to force override)"
+    else
+      if [ -n "$direct_var_exists" ]; then
+        echo "WARNING: Overriding existing ${target_var} with value from ${file_path} (forced)"
+      fi
+      # Read the file content and export it as target variable
+      export "$target_var"="$(< "$file_path")"
+      echo "INFO: Loaded secret from ${file_path} into ${target_var}"
+    fi
   else
     echo "WARNING: Secret file ${file_path} for ${env_var} does not exist!"
   fi

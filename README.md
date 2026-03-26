@@ -75,6 +75,8 @@ Some environment variables contain sensitive information such as passwords, API 
 
 For sensitive variables, you can use the `_SEC_` prefix in combination with `_FILE`. The container will automatically read the file content and populate the corresponding **regular environment variable**.
 
+**Priority:** Direct environment variables take precedence over file-based secrets. If a regular variable is already set, the file-based secret will be ignored. This ensures explicit configuration always overrides mounted secrets.
+
 **Example variables:**
 
 ```text
@@ -96,19 +98,37 @@ EXO_SEC_CHAT_SERVER_PASSPHRASE_FILE=/run/secrets/exo_chat_passphrase
 
 **How it works:**
 
-The container checks if the _SEC_ + _FILE variant exists.
+The container checks if the _SEC_ + _FILE variant exists and if the corresponding regular environment variable is **not already set**. If both conditions are met, it reads the content of the file and sets the regular environment variable automatically.
 
-If yes, it reads the content of the file and sets the corresponding regular environment variable (without _SEC_ and _FILE) automatically.
+This allows eXo to always use standard environment variable names, while keeping secrets securely stored in files.
 
-This allows your application to always use standard environment variable names, while keeping secrets securely stored in files.
+**Example 1: Only file-based secret provided**
 
 ```bash
-# File /run/secrets/exo_db_password contains "supersecret"
+# Set only the file reference
 EXO_SEC_DB_PASSWORD_FILE=/run/secrets/exo_db_password
+# File /run/secrets/exo_db_password contains "supersecret"
 ```
+
 Inside the container, the following will be set automatically:
+
 ```bash
 EXO_DB_PASSWORD="supersecret"
+```
+
+**Example 2: Direct variable takes priority**
+
+```bash
+# Set both direct variable and file reference
+EXO_DB_PASSWORD="custom-value"
+EXO_SEC_DB_PASSWORD_FILE=/run/secrets/exo_db_password
+# File /run/secrets/exo_db_password contains "supersecret"
+```
+
+Inside the container, the direct value is preserved:
+
+```bash
+EXO_DB_PASSWORD="custom-value"  # File content is ignored
 ```
 
 ### Add-ons
