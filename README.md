@@ -77,28 +77,39 @@ For sensitive variables, you can use the `_SEC_` prefix in combination with `_FI
 
 **Priority:** Direct environment variables take precedence over file-based secrets. If a regular variable is already set, the file-based secret will be ignored. This ensures explicit configuration always overrides mounted secrets.
 
+**Force override:** To force file-based secrets to override direct environment variables (e.g., for testing or debugging), use the `_FORCE` suffix:
+
+```bash
+EXO_SEC_DB_PASSWORD_FILE_FORCE=true
+```
+
 **Example variables:**
 
 ```text
 EXO_DB_PASSWORD
 EXO_SEC_DB_PASSWORD_FILE=/run/secrets/exo_db_password
+EXO_SEC_DB_PASSWORD_FILE_FORCE=true
 
 EXO_MAIL_SMTP_PASSWORD
 EXO_SEC_MAIL_SMTP_PASSWORD_FILE=/run/secrets/exo_mail_smtp_password
+EXO_SEC_MAIL_SMTP_PASSWORD_FILE_FORCE=true
 
 EXO_JMX_PASSWORD
 EXO_SEC_JMX_PASSWORD_FILE=/run/secrets/exo_jmx_password
+EXO_SEC_JMX_PASSWORD_FILE_FORCE=true
 
 EXO_REWARDS_WALLET_ADMIN_KEY
 EXO_SEC_REWARDS_WALLET_ADMIN_KEY_FILE=/run/secrets/exo_rewards_wallet_key
+EXO_SEC_REWARDS_WALLET_ADMIN_KEY_FILE_FORCE=true
 
 EXO_CHAT_SERVER_PASSPHRASE
 EXO_SEC_CHAT_SERVER_PASSPHRASE_FILE=/run/secrets/exo_chat_passphrase
+EXO_SEC_CHAT_SERVER_PASSPHRASE_FILE_FORCE=true
 ```
 
 **How it works:**
 
-The container checks if the _SEC_ + _FILE variant exists and if the corresponding regular environment variable is **not already set**. If both conditions are met, it reads the content of the file and sets the regular environment variable automatically.
+The container checks if the _SEC_ + _FILE variant exists and if the corresponding regular environment variable is **not already set** (unless `_FORCE` is enabled). If conditions are met, it reads the content of the file and sets the regular environment variable automatically.
 
 This allows eXo to always use standard environment variable names, while keeping secrets securely stored in files.
 
@@ -129,6 +140,22 @@ Inside the container, the direct value is preserved:
 
 ```bash
 EXO_DB_PASSWORD="custom-value"  # File content is ignored
+```
+
+**Example 3: Force override with _FORCE**
+
+```bash
+# Set direct variable and file reference with force
+EXO_DB_PASSWORD="custom-value"
+EXO_SEC_DB_PASSWORD_FILE=/run/secrets/exo_db_password
+EXO_SEC_DB_PASSWORD_FILE_FORCE=true
+# File /run/secrets/exo_db_password contains "supersecret"
+```
+
+Inside the container, the file value overrides:
+
+```bash
+EXO_DB_PASSWORD="supersecret"  # File content overrides due to _FORCE
 ```
 
 ### Add-ons
