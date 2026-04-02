@@ -18,7 +18,7 @@ ARG YQ_VERSION=v4.52.5
 ARG YQ_SHA256=75d893a0d5940d1019cb7cdc60001d9e876623852c31cfc6267047bc31149fa9
 
 # Build Arguments and environment variables
-ARG EXO_VERSION=7.2.0-M22
+ARG EXO_VERSION=7.2.0-M23
 
 # this allow to specify an eXo Platform download url
 ARG DOWNLOAD_URL
