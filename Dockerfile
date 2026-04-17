@@ -14,8 +14,8 @@ LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.description="Docker image for eXo Platform Enterprise Edition" \
       org.opencontainers.image.vendor="eXo Platform"
 
-ARG YQ_VERSION=v4.52.5
-ARG YQ_SHA256=75d893a0d5940d1019cb7cdc60001d9e876623852c31cfc6267047bc31149fa9
+ARG YQ_VERSION=v4.53.2
+ARG YQ_SHA256=d56bf5c6819e8e696340c312bd70f849dc1678a7cda9c2ad63eebd906371d56b
 
 # Install the needed packages
 RUN apk update && \
