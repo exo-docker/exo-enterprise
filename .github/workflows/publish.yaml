@@ -4,9 +4,9 @@ on:
   push:
     tags:
       - '*'
-    branches: [ arm64 ]
+    branches: [ develop ]
 env:
-  BRANCH_BUILD_TAGS: "multi"
+  BRANCH_BUILD_TAGS: "latest,develop"
 jobs:
   parse-docker-build-env:
     name: 'Parse Docker Build Environment'
