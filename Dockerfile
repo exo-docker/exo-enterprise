@@ -15,7 +15,6 @@ LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.vendor="eXo Platform"
 
 ARG YQ_VERSION=v4.53.2
-ARG YQ_SHA256=d56bf5c6819e8e696340c312bd70f849dc1678a7cda9c2ad63eebd906371d56b
 
 # Build Arguments and environment variables
 ARG EXO_VERSION=7.2.0-M26
@@ -59,14 +58,24 @@ RUN apt-get -qq update && \
     fontconfig && \
   apt-get -qq -y autoremove && \
   apt-get -qq -y clean && \
-  rm -rf /var/lib/apt/lists/* && \
-  # Check if the released binary was modified and make the build fail if it is the case
-  curl -fsSL -o /usr/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" && \
-  echo "${YQ_SHA256} /usr/bin/yq" | sha256sum -c - \
-  || { \
-  echo "ERROR: the [/usr/bin/yq] binary downloaded from a github release was modified while is should not !!"; \
-  return 1; \
-  } && chmod a+x /usr/bin/yq
+  rm -rf /var/lib/apt/lists/*
+
+# Download yq with architecture detection and checksum verification
+RUN YQ_ARCH=$(dpkg --print-architecture) && \
+    if [ "$YQ_ARCH" = "amd64" ]; then \
+        YQ_SHA256="d56bf5c6819e8e696340c312bd70f849dc1678a7cda9c2ad63eebd906371d56b"; \
+    elif [ "$YQ_ARCH" = "arm64" ]; then \
+        YQ_SHA256="03061b2a50c7a498de2bbb92d7cb078ce433011f085a4994117c2726be4106ea"; \
+    else \
+        echo "Unsupported architecture: $YQ_ARCH"; exit 1; \
+    fi && \
+    curl -fsSL -o /usr/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${YQ_ARCH}" && \
+    echo "${YQ_SHA256} /usr/bin/yq" | sha256sum -c - \
+    || { \
+    echo "ERROR: the [/usr/bin/yq] binary downloaded from a github release was modified while it should not !!"; \
+    exit 1; \
+    } && \
+    chmod a+x /usr/bin/yq
 
 # Drop pebble as we use tini
 RUN rm -f /usr/bin/pebble \

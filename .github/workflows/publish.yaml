@@ -43,5 +43,6 @@ jobs:
       with:
         dockerImage: "exoplatform/exo-enterprise"
         dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
+        platforms: "linux/arm64,linux/amd64"
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
