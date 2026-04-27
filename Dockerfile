@@ -7,7 +7,7 @@
 # Run:      docker run -ti --rm --name=exo -p 80:8080 exoplatform/exo-enterprise
 #           docker run -d --name=exo -p 80:8080 exoplatform/exo-enterprise
 
-FROM  exoplatform/jdk:openjdk-21-ubuntu-2404
+FROM  exoplatform/jdk:openjdk-21-ubuntu-2604
 
 LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.title="eXo Platform Enterprise" \
