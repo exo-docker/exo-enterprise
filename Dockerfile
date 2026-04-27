@@ -68,6 +68,11 @@ RUN apt-get -qq update && \
   return 1; \
   } && chmod a+x /usr/bin/yq
 
+# Drop pebble as we use tini
+RUN rm -f /usr/bin/pebble \
+    && rm -rf /var/lib/pebble \
+    && rm -rf /etc/pebble
+
 # Create needed directories
 RUN mkdir -p ${EXO_DATA_DIR}         && chown ${EXO_USER}:${EXO_GROUP} ${EXO_DATA_DIR} && \
   mkdir -p ${EXO_SHARED_DATA_DIR}  && chown ${EXO_USER}:${EXO_GROUP} ${EXO_SHARED_DATA_DIR} && \
