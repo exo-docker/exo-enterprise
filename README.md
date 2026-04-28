@@ -4,7 +4,11 @@
 
 | Image                                                       | JDK | eXo Platform             |
 | ----------------------------------------------------------- | --- | ------------------------ |
-| exoplatform/exo-enterprise:latest                           | 21  | 7.0.x Enterprise edition |
+| exoplatform/exo-enterprise:latest                           | 21  | 7.2.x Enterprise edition |
+| exoplatform/exo-enterprise:7.1_latest                       | 21  | 7.1.x Enterprise edition |
+| exoplatform/exo-enterprise:7.0_latest                       | 21  | 7.0.x Enterprise edition |
+
+> **Multi-Architecture Support**: Starting from version `7.2.0-M27`, eXo Platform Docker images are built for both `linux/amd64` and `linux/arm64` architectures. This allows running eXo Platform on Apple Silicon (M1/M2/M3), AWS Graviton, and other ARM64-based systems. Previous versions (7.0.x and 7.1.x) are amd64 only.
 
 The image is compatible with the following databases system :  `MySQL` (default) / `HSQLDB` / `PostgreSQL`
 
