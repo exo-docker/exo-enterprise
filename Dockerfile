@@ -24,21 +24,28 @@ RUN apk update && \
   update-ms-fonts &&  fc-cache -f
 
 # Download yq with architecture detection and checksum verification
-RUN YQ_ARCH=$(dpkg --print-architecture) && \
+RUN ARCH=$(apk --print-arch) && \
+    case "$ARCH" in \
+      x86_64) YQ_ARCH="amd64" ;; \
+      aarch64) YQ_ARCH="arm64" ;; \
+      *) echo "Unsupported architecture: $ARCH"; exit 1 ;; \
+    esac && \
+    \
     if [ "$YQ_ARCH" = "amd64" ]; then \
         YQ_SHA256="d56bf5c6819e8e696340c312bd70f849dc1678a7cda9c2ad63eebd906371d56b"; \
     elif [ "$YQ_ARCH" = "arm64" ]; then \
         YQ_SHA256="03061b2a50c7a498de2bbb92d7cb078ce433011f085a4994117c2726be4106ea"; \
-    else \
-        echo "Unsupported architecture: $YQ_ARCH"; exit 1; \
     fi && \
-    curl -fsSL -o /usr/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${YQ_ARCH}" && \
-    echo "${YQ_SHA256} /usr/bin/yq" | sha256sum -c - \
-    || { \
-    echo "ERROR: the [/usr/bin/yq] binary downloaded from a github release was modified while it should not !!"; \
-    exit 1; \
+    \
+    curl -fsSL -o /usr/bin/yq \
+      "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${YQ_ARCH}" && \
+    \
+    echo "${YQ_SHA256}  /usr/bin/yq" | sha256sum -c - || { \
+      echo "ERROR: yq binary failed checksum verification"; \
+      exit 1; \
     } && \
-    chmod a+x /usr/bin/yqd a+x /usr/bin/yq
+    \
+    chmod a+x /usr/bin/yq
 
 RUN sed -i "s/999/99/" /etc/group
 
