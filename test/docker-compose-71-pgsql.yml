@@ -19,6 +19,7 @@ services:
     environment:
       EXO_DB_TYPE: pgsql
       EXO_ADDONS_LIST:
+      EXO_ADDONS_REMOVE_LIST: exo-jdbc-driver-mysql
       EXO_PATCHES_LIST:
       EXO_PATCHES_CATALOG_URL:
       EXO_ES_HOST: search
