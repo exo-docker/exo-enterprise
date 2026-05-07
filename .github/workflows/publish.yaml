@@ -54,6 +54,7 @@ jobs:
       packages: write
       id-token: write
       attestations: write
+      artifact-metadata: write
     needs: parse-docker-build-env
     steps:
     - uses: exo-actions/buildDockerImage-action@v1
