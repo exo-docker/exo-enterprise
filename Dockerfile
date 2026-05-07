@@ -12,7 +12,8 @@ FROM  azul/zulu-openjdk-alpine:21
 LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.title="eXo Platform Enterprise" \
       org.opencontainers.image.description="Docker image for eXo Platform Enterprise Edition" \
-      org.opencontainers.image.vendor="eXo Platform"
+      org.opencontainers.image.vendor="eXo Platform" \
+      org.opencontainers.image.source="https://github.com/exo-docker/exo-enterprise"
 
 ARG YQ_VERSION=v4.53.2
 
