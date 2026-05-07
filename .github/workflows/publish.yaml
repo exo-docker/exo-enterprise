@@ -46,3 +46,27 @@ jobs:
         platforms: "linux/arm64,linux/amd64"
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  build-ghcr-image:
+    name: "Build Docker Images to Github Container Registry"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    needs: parse-docker-build-env
+    steps:
+    - uses: exo-actions/buildDockerImage-action@v1
+      with:
+        dockerRegistry: "ghcr.io"
+        dockerImage: "exoplatform/exo-enterprise"
+        dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
+        platforms: "linux/arm64,linux/amd64"
+        cosignImage: true
+        cosignOidcImage: true
+        attestImage: true
+        attestImageRegistry: "ghcr.io"
+        DOCKER_USERNAME: ${{ secrets.SWF_ACTOR }}
+        DOCKER_PASSWORD: ${{ secrets.SWF_TOKEN }}
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
