@@ -44,7 +44,7 @@ jobs:
         dockerImage: "exoplatform/exo-enterprise"
         dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
         platforms: "linux/arm64,linux/amd64"
-        labels: |
+        annotations: |
           org.opencontainers.image.title=eXo Platform Enterprise
           org.opencontainers.image.description=Docker image for eXo Platform Enterprise Edition
           org.opencontainers.image.vendor=eXo Platform
@@ -69,7 +69,7 @@ jobs:
         dockerImage: "exoplatform/exo-enterprise"
         dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
         platforms: "linux/arm64,linux/amd64"
-        labels: |
+        annotations: |
           org.opencontainers.image.title=eXo Platform Enterprise
           org.opencontainers.image.description=Docker image for eXo Platform Enterprise Edition
           org.opencontainers.image.vendor=eXo Platform
