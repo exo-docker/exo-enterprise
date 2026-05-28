@@ -44,6 +44,12 @@ jobs:
         dockerImage: "exoplatform/exo-enterprise"
         dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
         platforms: "linux/arm64,linux/amd64"
+        labels: |
+          org.opencontainers.image.title=eXo Platform Enterprise
+          org.opencontainers.image.description=Docker image for eXo Platform Enterprise Edition
+          org.opencontainers.image.vendor=eXo Platform
+          org.opencontainers.image.source=https://github.com/exo-docker/exo-enterprise
+          org.opencontainers.image.authors=eXo Platform <docker@exoplatform.com>
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   build-ghcr-image:
@@ -63,6 +69,12 @@ jobs:
         dockerImage: "exoplatform/exo-enterprise"
         dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
         platforms: "linux/arm64,linux/amd64"
+        labels: |
+          org.opencontainers.image.title=eXo Platform Enterprise
+          org.opencontainers.image.description=Docker image for eXo Platform Enterprise Edition
+          org.opencontainers.image.vendor=eXo Platform
+          org.opencontainers.image.source=https://github.com/exo-docker/exo-enterprise
+          org.opencontainers.image.authors=eXo Platform <docker@exoplatform.com>
         cosignImage: true
         cosignOidcImage: true
         attestImage: true
