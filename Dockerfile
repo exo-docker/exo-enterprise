@@ -15,7 +15,7 @@ LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.vendor="eXo Platform" \
       org.opencontainers.image.source="https://github.com/exo-docker/exo-enterprise"
 
-ARG YQ_VERSION=v4.53.2
+ARG YQ_VERSION=v4.53.3
 
 # Build Arguments and environment variables
 ARG EXO_VERSION=7.2.0-20260610
@@ -64,9 +64,9 @@ RUN apt-get -qq update && \
 # Download yq with architecture detection and checksum verification
 RUN YQ_ARCH=$(dpkg --print-architecture) && \
     if [ "$YQ_ARCH" = "amd64" ]; then \
-        YQ_SHA256="d56bf5c6819e8e696340c312bd70f849dc1678a7cda9c2ad63eebd906371d56b"; \
+        YQ_SHA256="fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4"; \
     elif [ "$YQ_ARCH" = "arm64" ]; then \
-        YQ_SHA256="03061b2a50c7a498de2bbb92d7cb078ce433011f085a4994117c2726be4106ea"; \
+        YQ_SHA256="578648e463a11c1b6db6010cbf41eafed6bee79466fcffa1bb446672cf7945ea"; \
     else \
         echo "Unsupported architecture: $YQ_ARCH"; exit 1; \
     fi && \
