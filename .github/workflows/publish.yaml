@@ -71,7 +71,7 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: Save digest
         run: echo "${{ steps.build.outputs.digest }}" > "/tmp/${{ matrix.arch }}.digest"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.arch }}-digest
           path: /tmp/${{ matrix.arch }}.digest
@@ -88,11 +88,11 @@ jobs:
       tags: ${{ steps.merge.outputs.tags }}
       digest: ${{ steps.get-digest.outputs.digest }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: amd64-digest
           path: /tmp/digests
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: arm64-digest
           path: /tmp/digests
@@ -102,12 +102,6 @@ jobs:
           dockerImage: ${{ env.DOCKER_IMAGE }}
           dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
           digestsDir: /tmp/digests
-          annotations: |
-            org.opencontainers.image.title=eXo Platform Enterprise
-            org.opencontainers.image.description=Docker image for eXo Platform Enterprise Edition
-            org.opencontainers.image.vendor=eXo Platform
-            org.opencontainers.image.source=https://github.com/exo-docker/exo-enterprise
-            org.opencontainers.image.authors=eXo Platform <docker@exoplatform.com>
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: Get merged digest
