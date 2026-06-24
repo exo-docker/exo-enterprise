@@ -102,12 +102,6 @@ jobs:
           dockerImage: ${{ env.DOCKER_IMAGE }}
           dockerImageTag: ${{ needs.parse-docker-build-env.outputs.buildTags }}
           digestsDir: /tmp/digests
-          annotations: |
-            org.opencontainers.image.title=eXo Platform Enterprise
-            org.opencontainers.image.description=Docker image for eXo Platform Enterprise Edition
-            org.opencontainers.image.vendor=eXo Platform
-            org.opencontainers.image.source=https://github.com/exo-docker/exo-enterprise
-            org.opencontainers.image.authors=eXo Platform <docker@exoplatform.com>
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: Get merged digest
