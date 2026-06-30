@@ -4,9 +4,9 @@ on:
   push:
     tags:
       - '*'
-    branches: [ develop ]
+    branches: [ 7.2.x ]
 env:
-  BRANCH_BUILD_TAGS: "latest,develop"
+  BRANCH_BUILD_TAGS: "7.2_latest"
   DOCKER_IMAGE: "exoplatform/exo-enterprise"
 
 jobs:
