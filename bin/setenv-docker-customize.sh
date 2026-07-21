@@ -197,6 +197,8 @@ EXO_ES_URL="${EXO_ES_SCHEME}://${EXO_ES_HOST}:${EXO_ES_PORT}"
 [ -z "${EXO_ES_INDEX_SHARD_NB}" ] && EXO_ES_INDEX_SHARD_NB="5"
 
 [ -z "${EXO_WAIT_FOR_MATRIX}" ] && EXO_WAIT_FOR_MATRIX="false"
+[ -z "${EXO_MATRIX_CHECK_INTERVAL}" ] && EXO_MATRIX_CHECK_INTERVAL="5"
+
 [ -z "${EXO_MATRIX_HOST}" ] && EXO_MATRIX_HOST="matrix"
 [ -z "${EXO_MATRIX_PORT}" ] && EXO_MATRIX_PORT="8008"
 [ -z "${EXO_MATRIX_TIMEOUT}" ] && EXO_MATRIX_TIMEOUT="30"
@@ -1011,13 +1013,18 @@ fi
 # Wait for Matrix availability
 if [ "${EXO_WAIT_FOR_MATRIX}" = "true" ]; then
   echo "Waiting for Matrix server availability at ${EXO_MATRIX_HOST}:${EXO_MATRIX_PORT} ..."
-  wait-for ${EXO_MATRIX_HOST}:${EXO_MATRIX_PORT} -q -t ${EXO_MATRIX_TIMEOUT}
-  if [ $? != 0 ]; then
-    echo "[ERROR] The Matrix server at ${EXO_MATRIX_HOST}:${EXO_MATRIX_PORT} was not available within ${EXO_MATRIX_TIMEOUT}s! eXo startup aborted ..."
-    exit 1
-  else
-    echo "Matrix is available, continue starting..."
-  fi
+  elapsed=0
+  until curl -sSf http://${EXO_MATRIX_HOST}:${EXO_MATRIX_PORT}/health; do
+    if [ ${elapsed} -ge ${EXO_MATRIX_TIMEOUT} ]; then
+      echo "[ERROR] The Matrix server at ${EXO_MATRIX_HOST}:${EXO_MATRIX_PORT} was not available within ${EXO_MATRIX_TIMEOUT}s! eXo startup aborted ..."
+      exit 1
+    fi
+    echo "Matrix API not ready, retrying in ${EXO_MATRIX_CHECK_INTERVAL} seconds..."
+    sleep ${EXO_MATRIX_CHECK_INTERVAL}
+    elapsed=$((elapsed + EXO_MATRIX_CHECK_INTERVAL))
+  done
+  echo
+  echo "Matrix is available, continue starting..."
 else
   echo "Skipping Matrix availability check (EXO_WAIT_FOR_MATRIX=${EXO_WAIT_FOR_MATRIX})"
 fi
