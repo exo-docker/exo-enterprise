@@ -4,7 +4,8 @@
 
 | Image                                                       | JDK | eXo Platform             |
 | ----------------------------------------------------------- | --- | ------------------------ |
-| exoplatform/exo-enterprise:latest                           | 21  | 7.2.x Enterprise edition |
+| exoplatform/exo-enterprise:latest                           | 21  | 7.3.x Enterprise edition |
+| exoplatform/exo-enterprise:7.2_latest                       | 21  | 7.2.x Enterprise edition |
 | exoplatform/exo-enterprise:7.1_latest                       | 21  | 7.1.x Enterprise edition |
 | exoplatform/exo-enterprise:7.0_latest                       | 21  | 7.0.x Enterprise edition |
 
