@@ -41,7 +41,7 @@ ENV EXO_APP_DIR=/opt/exo \
     DEBIAN_FRONTEND=noninteractive
 
 # add our user and group first to make sure their IDs get assigned consistently
-RUN useradd --create-home -u 999 --user-group --shell /bin/bash ${EXO_USER}
+RUN useradd --create-home -u 999 --user-group --shell /bin/bash --no-log-init ${EXO_USER}
 
 # Install the needed packages
 RUN apt-get -qq update && \
