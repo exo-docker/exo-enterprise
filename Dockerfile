@@ -18,7 +18,7 @@ LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
 ARG YQ_VERSION=v4.53.4
 
 # Build Arguments and environment variables
-ARG EXO_VERSION=7.3.0-M05
+ARG EXO_VERSION=7.3.0-M06
 
 # this allow to specify an eXo Platform download url
 ARG DOWNLOAD_URL
