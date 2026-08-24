@@ -56,7 +56,7 @@ RUN apt-get -qq update && \
     unzip \
     ca-certificates \
     ttf-mscorefonts-installer \
-    fontconfig && \
+    libreoffice-calc libreoffice-draw libreoffice-impress libreoffice-math libreoffice-writer && \
   apt-get -qq -y autoremove && \
   apt-get -qq -y clean && \
   rm -rf /var/lib/apt/lists/*
