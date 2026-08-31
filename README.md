@@ -41,6 +41,7 @@ The image is compatible with the following databases system :  `MySQL` (default)
   - [exo.properties](#exoproperties)
 - [Testing](#testing)
 - [Image build](#image-build)
+- [Image signature](#image-signature)
 
 ## Configuration options
 
@@ -581,3 +582,29 @@ docker build \
 ```
 
 The password will be required during the build at the download step.
+
+## Image Signature
+
+eXo Enterprise docker images are signed with [cosign] (https://github.com/sigstore/cosign) tool from Docker Hub.
+
+In order to verify the signature of the eXo Enterprise docker image, please install the "cosign" command line tool. Then please follow these instructions:
+
+- Save the following public key to `cosign.pub` file:
+```gpg
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEgYKR7SoWbXjHya1Bc2Ih3kX8wv8w
+Y7StaVsRXzbcIL0jECiKzKarPxQQ69uVmZ6c0JEVQhBeN9w3pr75D4o2/A==
+-----END PUBLIC KEY-----
+```
+- Execute the following command:
+```bash
+cosign verify --key cosign.pub exoplatform/exo-enterprise:<tag>
+```
+*Example:*
+```bash
+cosign verify --key cosign.pub exoplatform/exo-enterprise:7.2.1_0
+```
+  Output:
+```json
+[{"critical":{"identity":{"docker-reference":"index.docker.io/exoplatform/exo-enterprise"},"image":{"docker-manifest-digest":"sha256:566a2fb402e6d39ee0b9644c3c939a8e399531be14776fc196691eb70c58105f"},"type":"cosign container image signature"},"optional":{"Bundle":{"SignedEntryTimestamp":"MEQCIExcjRoxvKnCZzNag2TDIN+xe2uqRzjYTS696U8ezJxBAiBCFpmqKju4LEoU9hIl5aFYcQg0TCiSQTy04tMM3qJHOw==","Payload":{"body":"eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiaGFzaGVkcmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiJiOTY5M2M1OWZiMjhlYWMxNTZmNjFkYTU2YzYwMDFjZTVlNmY3YTY1ODg0NjI2Y2Q1OTM0OTA1MTEyY2IyZjMxIn19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FVUNJUUR5VU5hdG1VS28wdWFOcDVyVVpqdUk1cERDY293OHlHaHBpRGdiZWFZNXh3SWdDamdrMERkd2hldERFUG5sMHdZRnVrZFpGeC9KLyt1aHhtelVMTExDQWgwPSIsInB1YmxpY0tleSI6eyJjb250ZW50IjoiTFMwdExTMUNSVWRKVGlCUVZVSk1TVU1nUzBWWkxTMHRMUzBLVFVacmQwVjNXVWhMYjFwSmVtb3dRMEZSV1VsTGIxcEplbW93UkVGUlkwUlJaMEZGWjFsTFVqZFRiMWRpV0dwSWVXRXhRbU15U1dnemExZzRkM1k0ZHdwWk4xTjBZVlp6VWxoNlltTkpUREJxUlVOcFMzcExZWEpRZUZGUk5qbDFWbTFhTm1Nd1NrVldVV2hDWlU0NWR6TndjamMxUkRSdk1pOUJQVDBLTFMwdExTMUZUa1FnVUZWQ1RFbERJRXRGV1MwdExTMHRDZz09In19fX0=","integratedTime":1785423004,"logIndex":2291368533,"logID":"c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d"}}}}]
+```
