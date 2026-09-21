@@ -547,6 +547,10 @@ This will produce an image with the current eXo Platform enterprise version and 
 | DOWNLOAD_URL     | NO        | public download url                  | the full url where the eXo Platform binary must be downloaded |
 | DOWNLOAD_USER    | NO        | -                                    | a username to use for downloading the eXo Platform binary     |
 | ARCHIVE_BASE_DIR | NO        | platform-${EXO_VERSION}              | Platform directory in the archive used for the installation   |
+| EXO_ZIP_SHA256   | NO        | published `${DOWNLOAD_URL}.sha256`   | expected sha256 checksum of the downloaded archive, overriding the checksum eXo publishes alongside the release; the build fails if it doesn't match |
+| VCS_REF          | NO        | -                                    | git commit sha recorded in the `org.opencontainers.image.revision` label |
+| BUILD_DATE       | NO        | -                                    | RFC3339 build timestamp recorded in the `org.opencontainers.image.created` label |
+| _APT_OPTIONS     | NO        | -                                    | extra options passed to every `apt-get install` (e.g. a proxy: `-o Acquire::http::Proxy=...`) |
 
 If you want to bundle a particular list of add-ons :
 
@@ -582,6 +586,16 @@ docker build \
 ```
 
 The password will be required during the build at the download step.
+
+For a non-interactive/CI build, pass the password as a [BuildKit secret](https://docs.docker.com/build/building/secrets/) instead so it never ends up in the build output or image layers:
+
+```bash
+docker build \
+  --secret id=download_password,src=./download-password.txt \
+  --build-arg DOWNLOAD_URL=http://my.host/my-own-download-link.zip \
+  --build-arg DOWNLOAD_USER=my-username \
+  -t exoplatform/exo-enterprise:my_version .
+```
 
 ## Image Signature
 

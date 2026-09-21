@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       buildTags: ${{ steps.detect-push-event.outputs.buildTags }}
+      buildDate: ${{ steps.detect-push-event.outputs.buildDate }}
     steps:
       - name: Check if push is a tag or branch
         id: detect-push-event
@@ -36,6 +37,7 @@ jobs:
             echo "Unknown push type"
             exit 1
           fi
+          echo "buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
 
   build-platforms:
     name: "Build ${{ matrix.platform }}"
@@ -67,6 +69,9 @@ jobs:
             org.opencontainers.image.vendor=eXo Platform
             org.opencontainers.image.source=https://github.com/exo-docker/exo-enterprise
             org.opencontainers.image.authors=eXo Platform <docker@exoplatform.com>
+          buildArgs: |
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ needs.parse-docker-build-env.outputs.buildDate }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: Save digest
