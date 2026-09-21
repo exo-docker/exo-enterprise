@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+#
 # Dockerizing base image for eXo Platform hosting offer with:
 #
 # - eXo Platform
@@ -7,27 +9,90 @@
 # Run:      docker run -ti --rm --name=exo -p 80:8080 exoplatform/exo-enterprise
 #           docker run -d --name=exo -p 80:8080 exoplatform/exo-enterprise
 
-FROM  exoplatform/jdk:openjdk-21-ubuntu-2604
+ARG BASE_IMAGE=exoplatform/jdk:openjdk-21-ubuntu-2604
+
+# Fetch & unpack the eXo Platform archive, kept in its own stage so
+# build-only tools (curl, unzip) never ship in the runtime image
+FROM ${BASE_IMAGE} AS downloader
+
+# Build Arguments and environment variables
+ARG EXO_VERSION=7.3.0-M11
+# this allow to specify an eXo Platform download url
+ARG DOWNLOAD_URL
+# this allow to specifiy a user to download a protected binary
+ARG DOWNLOAD_USER
+# Default base directory on the plf archive
+ARG ARCHIVE_BASE_DIR=platform-${EXO_VERSION}
+# Optional: expected sha256 of the downloaded archive, overriding the
+# ${DOWNLOAD_URL}.sha256 sidecar published by downloads.exoplatform.org
+# (auto-fetched and verified by default; a warning is printed only if
+# neither is available, e.g. a custom mirror with no published checksum).
+ARG EXO_ZIP_SHA256
+# extra options passed to every apt-get install (e.g. proxy config: -o Acquire::http::Proxy=...)
+ARG _APT_OPTIONS
+
+RUN apt-get -qq update && \
+  apt-get -qq -y install --no-install-recommends ${_APT_OPTIONS} \
+    curl \
+    unzip \
+    ca-certificates && \
+  apt-get -qq -y clean && \
+  rm -rf /var/lib/apt/lists/*
+
+# Download eXo Platform.
+# Credentials for a protected DOWNLOAD_URL can be supplied two ways:
+#   - DOWNLOAD_USER (username only) + an interactive password prompt, as before
+#   - a BuildKit secret "download_password" for non-interactive/CI builds:
+#       docker build --secret id=download_password,src=./password.txt \
+#         --build-arg DOWNLOAD_URL=... --build-arg DOWNLOAD_USER=... .
+RUN --mount=type=secret,id=download_password,required=false set -e; \
+  if [ -n "${DOWNLOAD_USER}" ]; then \
+    if [ -s /run/secrets/download_password ]; then \
+      PARAMS="-u ${DOWNLOAD_USER}:$(cat /run/secrets/download_password)"; \
+    else \
+      PARAMS="-u ${DOWNLOAD_USER}"; \
+    fi; \
+  fi && \
+  if [ ! -n "${DOWNLOAD_URL}" ]; then \
+  echo "Building an image with eXo Platform version : ${EXO_VERSION}"; \
+  EXO_VERSION_SHORT=$(echo ${EXO_VERSION} | awk -F "\." '{ print $1"."$2}'); \
+  DOWNLOAD_URL="https://downloads.exoplatform.org/public/releases/platform/${EXO_VERSION_SHORT}/${EXO_VERSION}/platform-${EXO_VERSION}.zip"; \
+  fi && \
+  curl ${PARAMS} -fsSL -o /tmp/eXo-Platform.zip ${DOWNLOAD_URL} && \
+  if [ -z "${EXO_ZIP_SHA256}" ]; then \
+    EXO_ZIP_SHA256=$(curl -fsSL "${DOWNLOAD_URL}.sha256" 2>/dev/null | awk '{print $1}'); \
+  fi && \
+  if [ -n "${EXO_ZIP_SHA256}" ]; then \
+    echo "${EXO_ZIP_SHA256} /tmp/eXo-Platform.zip" | sha256sum -c - \
+    || { echo "ERROR: the downloaded eXo Platform archive does not match its expected sha256 checksum !!"; exit 1; }; \
+  else \
+    echo "WARNING: no sha256 checksum available (none provided via EXO_ZIP_SHA256 and none published at ${DOWNLOAD_URL}.sha256), skipping integrity verification"; \
+  fi && \
+  unzip -q /tmp/eXo-Platform.zip -d /tmp/exo-extracted && \
+  mv /tmp/exo-extracted/${ARCHIVE_BASE_DIR} /tmp/exo-app && \
+  rm -rf /tmp/eXo-Platform.zip /tmp/exo-extracted
+
+# Runtime image
+FROM ${BASE_IMAGE}
+
+ARG YQ_VERSION=v4.53.6
+ARG EXO_VERSION=7.3.0-M11
+# allow to override the list of addons to package by default
+ARG ADDONS="exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.4"
+# OCI image metadata, e.g.: --build-arg VCS_REF=$(git rev-parse --short HEAD) --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+ARG VCS_REF
+ARG BUILD_DATE
+# extra options passed to every apt-get install (e.g. proxy config: -o Acquire::http::Proxy=...)
+ARG _APT_OPTIONS
 
 LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.title="eXo Platform Enterprise" \
       org.opencontainers.image.description="Docker image for eXo Platform Enterprise Edition" \
       org.opencontainers.image.vendor="eXo Platform" \
-      org.opencontainers.image.source="https://github.com/exo-docker/exo-enterprise"
-
-ARG YQ_VERSION=v4.53.6
-
-# Build Arguments and environment variables
-ARG EXO_VERSION=7.3.0-M11
-
-# this allow to specify an eXo Platform download url
-ARG DOWNLOAD_URL
-# this allow to specifiy a user to download a protected binary
-ARG DOWNLOAD_USER
-# allow to override the list of addons to package by default
-ARG ADDONS="exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.4"
-# Default base directory on the plf archive
-ARG ARCHIVE_BASE_DIR=platform-${EXO_VERSION}
+      org.opencontainers.image.source="https://github.com/exo-docker/exo-enterprise" \
+      org.opencontainers.image.version="${EXO_VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}"
 
 ENV EXO_APP_DIR=/opt/exo \
     EXO_CONF_DIR=/etc/exo \
@@ -45,7 +110,6 @@ RUN useradd --create-home -u 999 --user-group --shell /bin/bash --no-log-init ${
 
 # Install the needed packages
 RUN apt-get -qq update && \
-  apt-get -qq -y upgrade ${_APT_OPTIONS} && \
   apt-get -qq -y install --no-install-recommends ${_APT_OPTIONS} debconf-utils && \
   echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
   echo "ttf-mscorefonts-installer msttcorefonts/present-mscorefonts-eula note" | debconf-set-selections && \
@@ -53,7 +117,6 @@ RUN apt-get -qq update && \
     xmlstarlet \
     jq \
     curl \
-    unzip \
     ca-certificates \
     ttf-mscorefonts-installer \
     fontconfig && \
@@ -89,20 +152,9 @@ RUN mkdir -p ${EXO_DATA_DIR}         && chown ${EXO_USER}:${EXO_GROUP} ${EXO_DAT
   mkdir -p ${EXO_TMP_DIR}          && chown ${EXO_USER}:${EXO_GROUP} ${EXO_TMP_DIR}  && \
   mkdir -p ${EXO_LOG_DIR}          && chown ${EXO_USER}:${EXO_GROUP} ${EXO_LOG_DIR}
 
-# Install eXo Platform
-RUN set -e; \
-  if [ -n "${DOWNLOAD_USER}" ]; then PARAMS="-u ${DOWNLOAD_USER}"; fi && \
-  if [ ! -n "${DOWNLOAD_URL}" ]; then \
-  echo "Building an image with eXo Platform version : ${EXO_VERSION}"; \
-  EXO_VERSION_SHORT=$(echo ${EXO_VERSION} | awk -F "\." '{ print $1"."$2}'); \
-  DOWNLOAD_URL="https://downloads.exoplatform.org/public/releases/platform/${EXO_VERSION_SHORT}/${EXO_VERSION}/platform-${EXO_VERSION}.zip"; \
-  fi && \
-  curl ${PARAMS} -sS -L -o /tmp/eXo-Platform.zip ${DOWNLOAD_URL} && \
-  unzip -q /tmp/eXo-Platform.zip -d /tmp/ && \
-  rm -f /tmp/eXo-Platform.zip && \
-  mv /tmp/${ARCHIVE_BASE_DIR} ${EXO_APP_DIR} && \
-  chown -R ${EXO_USER}:${EXO_GROUP} ${EXO_APP_DIR} && \
-  ln -s ${EXO_APP_DIR}/gatein/conf ${EXO_CONF_DIR} && \
+# Install eXo Platform (built in the "downloader" stage above)
+COPY --from=downloader --chown=${EXO_USER}:${EXO_GROUP} /tmp/exo-app ${EXO_APP_DIR}
+RUN ln -s ${EXO_APP_DIR}/gatein/conf ${EXO_CONF_DIR} && \
   mkdir -p ${EXO_CODEC_DIR} && chown ${EXO_USER}:${EXO_GROUP} ${EXO_CODEC_DIR} && \
   rm -rf ${EXO_APP_DIR}/logs && ln -s ${EXO_LOG_DIR} ${EXO_APP_DIR}/logs
 
@@ -119,10 +171,14 @@ RUN chmod 755 ${EXO_APP_DIR}/bin/setenv-docker-customize.sh && \
 
 USER ${EXO_USER}
 
-RUN for a in ${ADDONS}; do echo "Installing addon $a"; /opt/exo/addon install $a; done
+RUN for a in ${ADDONS}; do \
+      echo "Installing addon $a"; \
+      /opt/exo/addon install $a || { echo "ERROR: failed to install addon $a"; exit 1; }; \
+    done
 
 WORKDIR ${EXO_LOG_DIR}
 ENTRYPOINT ["/usr/local/bin/tini", "--"]
 # Health Check
-HEALTHCHECK CMD curl --fail http://localhost:8080/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=300s --retries=3 \
+  CMD curl --fail http://localhost:8080/ || exit 1
 CMD [ "/opt/exo/start_eXo.sh" ]
