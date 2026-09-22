@@ -16,7 +16,7 @@ ARG BASE_IMAGE=exoplatform/jdk:openjdk-21-ubuntu-2604
 FROM ${BASE_IMAGE} AS downloader
 
 # Build Arguments and environment variables
-ARG EXO_VERSION=7.3.0-20260921
+ARG EXO_VERSION=7.3.0-20260922
 # this allow to specify an eXo Platform download url
 ARG DOWNLOAD_URL
 # this allow to specifiy a user to download a protected binary
@@ -76,7 +76,7 @@ RUN --mount=type=secret,id=download_password,required=false set -e; \
 FROM ${BASE_IMAGE}
 
 ARG YQ_VERSION=v4.53.6
-ARG EXO_VERSION=7.3.0-20260921
+ARG EXO_VERSION=7.3.0-20260922
 # allow to override the list of addons to package by default
 ARG ADDONS="exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.4"
 # OCI image metadata, e.g.: --build-arg VCS_REF=$(git rev-parse --short HEAD) --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
