@@ -16,6 +16,8 @@ jobs:
     outputs:
       buildTags: ${{ steps.detect-push-event.outputs.buildTags }}
       buildDate: ${{ steps.detect-push-event.outputs.buildDate }}
+      installLibreoffice: ${{ steps.detect-push-event.outputs.installLibreoffice }}
+      stableTag: ${{ steps.detect-push-event.outputs.stableTag }}
     steps:
       - name: Check if push is a tag or branch
         id: detect-push-event
@@ -23,12 +25,16 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
             echo "This is a tag push ($TAG)"
-            if [[ ! "$TAG" =~ ^[6-9]\.[0-9]\.[0-9](-(M|RC|CP)[0-9]{2})?_[0-9]$ ]]; then
+            if [[ ! "$TAG" =~ ^[6-9]\.[0-9]\.[0-9](-(M|RC|CP)[0-9]{2})?_[0-9](-jod)?$ ]]; then
               echo "❌ Invalid tag format: $TAG"
               exit 1
             fi
             echo "Building docker tag: ${GITHUB_REF#refs/tags/}"
             echo "buildTags=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            # "-jod" variant: same image plus LibreOffice for the JOD converter
+            [[ "$TAG" == *-jod ]] && echo "installLibreoffice=true" >> $GITHUB_OUTPUT
+            # stable release tag (no M/RC/CP, no -jod): a -jod variant tag gets created for it
+            [[ "$TAG" =~ ^[6-9]\.[0-9]\.[0-9]_[0-9]$ ]] && echo "stableTag=true" >> $GITHUB_OUTPUT
           elif [[ $GITHUB_REF == refs/heads/* ]]; then
             echo "This is a branch push (${GITHUB_REF#refs/heads/})"
             echo "Building docker tags: ${{ env.BRANCH_BUILD_TAGS }}"
@@ -71,6 +77,7 @@ jobs:
             org.opencontainers.image.authors=eXo Platform <docker@exoplatform.com>
           buildArgs: |
             VCS_REF=${{ github.sha }}
+            INSTALL_LIBREOFFICE=${{ needs.parse-docker-build-env.outputs.installLibreoffice || 'false' }}
             BUILD_DATE=${{ needs.parse-docker-build-env.outputs.buildDate }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -178,3 +185,27 @@ jobs:
           attestImageRegistry: ghcr.io
           DOCKER_USERNAME: ${{ secrets.SWF_ACTOR }}
           DOCKER_PASSWORD: ${{ secrets.SWF_TOKEN }}
+
+  create-jod-tag:
+    name: "Create -jod variant tag"
+    runs-on: ubuntu-latest
+    if: needs.parse-docker-build-env.outputs.stableTag == 'true'
+    needs:
+      - parse-docker-build-env
+      - merge-dockerhub
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # a PAT is required: tags pushed with the default GITHUB_TOKEN do not trigger workflows
+          token: ${{ secrets.SWF_TOKEN }}
+      - name: Push ${{ needs.parse-docker-build-env.outputs.buildTags }}-jod
+        run: |
+          JOD_TAG="${{ needs.parse-docker-build-env.outputs.buildTags }}-jod"
+          if git ls-remote --exit-code --tags origin "refs/tags/${JOD_TAG}" >/dev/null 2>&1; then
+            echo "Tag ${JOD_TAG} already exists, skipping"
+            exit 0
+          fi
+          git tag "${JOD_TAG}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${JOD_TAG}"

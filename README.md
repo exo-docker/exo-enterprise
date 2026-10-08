@@ -550,7 +550,18 @@ This will produce an image with the current eXo Platform enterprise version and 
 | EXO_ZIP_SHA256   | NO        | published `${DOWNLOAD_URL}.sha256`   | expected sha256 checksum of the downloaded archive, overriding the checksum eXo publishes alongside the release; the build fails if it doesn't match |
 | VCS_REF          | NO        | -                                    | git commit sha recorded in the `org.opencontainers.image.revision` label |
 | BUILD_DATE       | NO        | -                                    | RFC3339 build timestamp recorded in the `org.opencontainers.image.created` label |
+| INSTALL_LIBREOFFICE | NO     | `false`                              | set to `true` to install LibreOffice (required by the JOD converter); used for the `-jod` image variant |
 | _APT_OPTIONS     | NO        | -                                    | extra options passed to every `apt-get install` (e.g. a proxy: `-o Acquire::http::Proxy=...`) |
+
+If you need the JOD converter (document conversion through LibreOffice), build the `-jod` variant :
+
+```bash
+docker build \
+  --build-arg INSTALL_LIBREOFFICE=true \
+  -t exoplatform/exo-enterprise:my_version-jod .
+```
+
+On every stable release tag (e.g. `7.3.0_0`, not `-M`, `-RC` or `-CP`), the CI also creates the `<tag>-jod` git tag (e.g. `7.3.0_0-jod`), which publishes the matching `exoplatform/exo-enterprise:7.3.0_0-jod` image.
 
 If you want to bundle a particular list of add-ons :
 

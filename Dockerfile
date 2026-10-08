@@ -79,6 +79,8 @@ ARG YQ_VERSION=v4.53.6
 ARG EXO_VERSION=7.3.0-M14
 # allow to override the list of addons to package by default
 ARG ADDONS="exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.4"
+# install LibreOffice (needed by the JOD converter); published as the "-jod" image variant
+ARG INSTALL_LIBREOFFICE=false
 # OCI image metadata, e.g.: --build-arg VCS_REF=$(git rev-parse --short HEAD) --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 ARG VCS_REF
 ARG BUILD_DATE
@@ -120,6 +122,10 @@ RUN apt-get -qq update && \
     ca-certificates \
     ttf-mscorefonts-installer \
     fontconfig && \
+  if [ "${INSTALL_LIBREOFFICE}" = "true" ]; then \
+    apt-get -qq -y install --no-install-recommends ${_APT_OPTIONS} \
+      libreoffice-calc libreoffice-draw libreoffice-impress libreoffice-math libreoffice-writer; \
+  fi && \
   apt-get -qq -y autoremove && \
   apt-get -qq -y clean && \
   rm -rf /var/lib/apt/lists/*
