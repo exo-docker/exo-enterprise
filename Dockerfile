@@ -78,7 +78,7 @@ FROM ${BASE_IMAGE}
 ARG YQ_VERSION=v4.53.6
 ARG EXO_VERSION=7.3.0-M14
 # allow to override the list of addons to package by default
-ARG ADDONS="exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.4"
+ARG ADDONS="exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.5"
 # OCI image metadata, e.g.: --build-arg VCS_REF=$(git rev-parse --short HEAD) --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 ARG VCS_REF
 ARG BUILD_DATE
