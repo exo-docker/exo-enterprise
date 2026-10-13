@@ -198,3 +198,22 @@ jobs:
           notationImage: true
           signingKey: ${{ secrets.NOTATION_SIGNING_KEY }}
           signingCert: ${{ secrets.NOTATION_SIGNING_CERT }}
+
+  notation-dockerhub:
+    name: "Notation sign Docker Hub image"
+    runs-on: ubuntu-latest
+    permissions: {}
+    needs:
+      - parse-docker-build-env
+      - merge-dockerhub
+    steps:
+      - uses: exo-actions/buildDockerImage-action/notation-image@v1
+        with:
+          dockerImage: ${{ env.DOCKER_IMAGE }}
+          dockerImageDigest: ${{ needs.merge-dockerhub.outputs.digest }}
+          dockerRegistry: docker.io
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          notationImage: true
+          signingKey: ${{ secrets.NOTATION_SIGNING_KEY }}
+          signingCert: ${{ secrets.NOTATION_SIGNING_CERT }}

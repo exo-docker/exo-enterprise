@@ -632,7 +632,7 @@ In order to verify the signature of the eXo Enterprise docker image, please inst
 
 ### Notation (Notary Project)
 
-The images published on `ghcr.io/exoplatform/exo-enterprise` are also signed with [Notation](https://notaryproject.dev) (Notary Project), as an alternative to cosign. One signature covers every tag pointing at the same digest.
+The images published on Docker Hub (`exoplatform/exo-enterprise`) and on `ghcr.io/exoplatform/exo-enterprise` are also signed with [Notation](https://notaryproject.dev) (Notary Project), as an alternative to cosign. One signature covers every tag pointing at the same digest.
 
 To verify an image, install the `notation` command line tool, then:
 
@@ -642,14 +642,14 @@ To verify an image, install the `notation` command line tool, then:
     notation cert add --type ca --store exo notation-signing.crt
     ```
 
-2. Import a trust policy that scopes the certificate to the eXo Enterprise image (`trustpolicy.json`):
+2. Import a trust policy that scopes the certificate to the eXo Enterprise images (`trustpolicy.json`):
 
     ```json
     {
       "version": "1.0",
       "trustPolicies": [{
         "name": "exo",
-        "registryScopes": ["ghcr.io/exoplatform/exo-enterprise"],
+        "registryScopes": ["docker.io/exoplatform/exo-enterprise", "ghcr.io/exoplatform/exo-enterprise"],
         "signatureVerification": {"level": "strict"},
         "trustStores": ["ca:exo"],
         "trustedIdentities": ["*"]
@@ -664,5 +664,5 @@ To verify an image, install the `notation` command line tool, then:
 3. Verify the image:
 
     ```bash
-    notation verify ghcr.io/exoplatform/exo-enterprise:<tag>
+    notation verify docker.io/exoplatform/exo-enterprise:<tag>
     ```
