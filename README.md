@@ -629,3 +629,50 @@ In order to verify the signature of the eXo Enterprise docker image, please inst
     ```json
     [{"critical":{"identity":{"docker-reference":"index.docker.io/exoplatform/exo-enterprise"},"image":{"docker-manifest-digest":"sha256:566a2fb402e6d39ee0b9644c3c939a8e399531be14776fc196691eb70c58105f"},"type":"cosign container image signature"},"optional":{"Bundle":{"SignedEntryTimestamp":"MEQCIExcjRoxvKnCZzNag2TDIN+xe2uqRzjYTS696U8ezJxBAiBCFpmqKju4LEoU9hIl5aFYcQg0TCiSQTy04tMM3qJHOw==","Payload":{"body":"eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiaGFzaGVkcmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiJiOTY5M2M1OWZiMjhlYWMxNTZmNjFkYTU2YzYwMDFjZTVlNmY3YTY1ODg0NjI2Y2Q1OTM0OTA1MTEyY2IyZjMxIn19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FVUNJUUR5VU5hdG1VS28wdWFOcDVyVVpqdUk1cERDY293OHlHaHBpRGdiZWFZNXh3SWdDamdrMERkd2hldERFUG5sMHdZRnVrZFpGeC9KLyt1aHhtelVMTExDQWgwPSIsInB1YmxpY0tleSI6eyJjb250ZW50IjoiTFMwdExTMUNSVWRKVGlCUVZVSk1TVU1nUzBWWkxTMHRMUzBLVFVacmQwVjNXVWhMYjFwSmVtb3dRMEZSV1VsTGIxcEplbW93UkVGUlkwUlJaMEZGWjFsTFVqZFRiMWRpV0dwSWVXRXhRbU15U1dnemExZzRkM1k0ZHdwWk4xTjBZVlp6VWxoNlltTkpUREJxUlVOcFMzcExZWEpRZUZGUk5qbDFWbTFhTm1Nd1NrVldVV2hDWlU0NWR6TndjamMxUkRSdk1pOUJQVDBLTFMwdExTMUZUa1FnVUZWQ1RFbERJRXRGV1MwdExTMHRDZz09In19fX0=","integratedTime":1785423004,"logIndex":2291368533,"logID":"c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d"}}}}]
     ```
+
+### Notation (Notary Project)
+
+The images published on Docker Hub (`exoplatform/exo-enterprise`) and on `ghcr.io/exoplatform/exo-enterprise` are also signed with [Notation](https://notaryproject.dev) (Notary Project), as an alternative to cosign. One signature covers every tag pointing at the same digest.
+
+To verify an image, install the `notation` command line tool, then:
+
+1. Download the eXo signing certificate ([`notation-signing.crt`](https://raw.githubusercontent.com/exo-docker/exo-enterprise/develop/notation-signing.crt), also published at <https://www.exoplatform.com/security/container-signing-notation.crt>) and check its fingerprint:
+
+    ```bash
+    openssl x509 -in notation-signing.crt -noout -fingerprint -sha256
+    ```
+
+    ```text
+    sha256 Fingerprint=8C:A6:2F:D8:F3:3D:45:C4:47:F2:35:82:2A:08:20:89:70:95:DE:CF:0F:04:5A:0C:C8:96:20:D8:2E:76:9C:4E
+    ```
+
+    Then add it to a trust store:
+
+    ```bash
+    notation cert add --type ca --store exo notation-signing.crt
+    ```
+
+2. Import a trust policy that scopes the certificate to the eXo Enterprise images (`trustpolicy.json`):
+
+    ```json
+    {
+      "version": "1.0",
+      "trustPolicies": [{
+        "name": "exo",
+        "registryScopes": ["docker.io/exoplatform/exo-enterprise", "ghcr.io/exoplatform/exo-enterprise"],
+        "signatureVerification": {"level": "strict"},
+        "trustStores": ["ca:exo"],
+        "trustedIdentities": ["*"]
+      }]
+    }
+    ```
+
+    ```bash
+    notation policy import trustpolicy.json
+    ```
+
+3. Verify the image:
+
+    ```bash
+    notation verify docker.io/exoplatform/exo-enterprise:<tag>
+    ```
