@@ -636,7 +636,17 @@ The images published on Docker Hub (`exoplatform/exo-enterprise`) and on `ghcr.i
 
 To verify an image, install the `notation` command line tool, then:
 
-1. Download the eXo signing certificate (`notation-signing.crt`) and add it to a trust store:
+1. Download the eXo signing certificate ([`notation-signing.crt`](https://raw.githubusercontent.com/exo-docker/exo-enterprise/develop/notation-signing.crt), also published at <https://www.exoplatform.com/security/container-signing>) and check its fingerprint:
+
+    ```bash
+    openssl x509 -in notation-signing.crt -noout -fingerprint -sha256
+    ```
+
+    ```text
+    sha256 Fingerprint=8C:A6:2F:D8:F3:3D:45:C4:47:F2:35:82:2A:08:20:89:70:95:DE:CF:0F:04:5A:0C:C8:96:20:D8:2E:76:9C:4E
+    ```
+
+    Then add it to a trust store:
 
     ```bash
     notation cert add --type ca --store exo notation-signing.crt
