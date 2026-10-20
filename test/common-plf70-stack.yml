@@ -41,12 +41,6 @@ services:
       - front
       - back
       - mail
-  mongo:
-    image: mongo:6.0
-    volumes:
-      - mongo_data:/data/db:rw
-    networks:
-      - back
   mysql:
     image: mysql:8.4.3
     environment:
@@ -85,10 +79,6 @@ services:
     image: mailhog/mailhog
     environment:
       MH_SMTP_BIND_ADDR: 0.0.0.0:1025
-      MH_STORAGE: mongodb
-      MH_MONGO_URI: mongo:27017
-      MH_MONGO_DB: mailhog
-      MH_MONGO_COLLECTION: messages
       MH_UI_WEB_PATH: mail
     networks:
       - back

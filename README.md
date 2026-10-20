@@ -23,9 +23,6 @@ The image is compatible with the following databases system :  `MySQL` (default)
   - [Data on disk](#data-on-disk)
   - [Database](#database)
     - [MySQL](#mysql)
-  - [eXo Chat](#exo-chat)
-    - [embedded](#embedded)
-    - [standalone](#standalone)
   - [ElasticSearch](#elasticsearch)
   - [Matrix](#matrix)
   - [LDAP / Active Directory](#ldap--active-directory)
@@ -61,7 +58,7 @@ services:
     image: exoplatform/exo-enterprise
     environment:
 ...
-      EXO_ADDONS_LIST: exo-chat
+      EXO_ADDONS_LIST: exo-jdbc-driver-postgresql
       EXO_PATCHES_LIST:
       EXO_PATCHES_CATALOG_URL:
       EXO_ES_HOST: search
@@ -107,9 +104,6 @@ EXO_REWARDS_WALLET_ADMIN_KEY
 EXO_SEC_REWARDS_WALLET_ADMIN_KEY_FILE=/run/secrets/exo_rewards_wallet_key
 EXO_SEC_REWARDS_WALLET_ADMIN_KEY_FILE_FORCE=true
 
-EXO_CHAT_SERVER_PASSPHRASE
-EXO_SEC_CHAT_SERVER_PASSPHRASE_FILE=/run/secrets/exo_chat_passphrase
-EXO_SEC_CHAT_SERVER_PASSPHRASE_FILE_FORCE=true
 ```
 
 **How it works:**
@@ -170,7 +164,7 @@ Some add-ons are already installed in eXo image but you can install other one or
 | VARIABLE                 | MANDATORY | DEFAULT VALUE | DESCRIPTION                                                                                   |
 | ------------------------ | --------- | ------------- | --------------------------------------------------------------------------------------------- |
 | EXO_ADDONS_LIST          | NO        | -             | commas separated list of add-ons to install (ex: exo-answers,exo-skype:1.0.x-SNAPSHOT)        |
-| EXO_ADDONS_REMOVE_LIST   | NO        | -             | commas separated list of add-ons to uninstall (ex: exo-chat) (since: 4.4.2_3) |
+| EXO_ADDONS_REMOVE_LIST   | NO        | -             | commas separated list of add-ons to uninstall (ex: exo-jdbc-driver-mysql) |
 | EXO_ADDONS_CATALOG_URL   | NO        | -             | The url of a valid eXo Catalog                                                                |
 | EXO_ADDONS_CONFLICT_MODE | NO        | -             | decision to make in case of file conflicts (overwrite, ignore or fail)                        |
 | EXO_ADDONS_NOCOMPAT_MODE | NO        | false         | decision to allow to install incompatible addon |
@@ -291,52 +285,6 @@ The following environment variables must be passed to the container in order to 
 | VARIABLE             | MANDATORY | DEFAULT VALUE | DESCRIPTION                                                                                       |
 | -------------------- | --------- | ------------- | ------------------------------------------------------------------------------------------------- |
 | EXO_DB_MYSQL_USE_SSL | NO        | `false`       | connecting securely to MySQL using SSL (see MySQL Connector/J documentation for useSSL parameter) |
-
-### eXo Chat
-
-eXo Chat is available in 2 flavors :
-
-- embedded (default) : satisfy to most cases, the simplest to install and need only an external MongoDB instance.
-- standalone : if you want to separate eXo and Chat JVM (for high throughput performance or architecture concerns).
-
-A switch is available to enable the standalone mode :
-
-| VARIABLE                   | MANDATORY | DEFAULT VALUE | DESCRIPTION                                           |
-| -------------------------- | --------- | ------------- | ----------------------------------------------------- |
-| EXO_CHAT_SERVER_STANDALONE | NO        | `false`       | are you using a standalone version of eXo Chat server |
-
-#### embedded
-
-With eXo Chat embedded mode, the client and server part of the chat feature are installed in eXo container.
-
-- add-on to install : `exo-chat:<VERSION>`
-
-The following environment variables should be passed to eXo container to configure eXo Chat :
-
-| VARIABLE           | MANDATORY | DEFAULT VALUE | DESCRIPTION                                                                                        |
-| ------------------ | --------- | ------------- | -------------------------------------------------------------------------------------------------- |
-| EXO_MONGO_HOST     | NO        | `mongo`       | the hostname to connect to the mongodb database for eXo Chat                                       |
-| EXO_MONGO_PORT     | NO        | `27017`       | the port to connect to the mongodb server                                                          |
-| EXO_MONGO_USERNAME | NO        | -             | the username to use to connect to the mongodb database (no authentication configured by default) |
-| EXO_MONGO_PASSWORD | NO        | -             | the password to use to connect to the mongodb database (no authentication configured by default) |
-| EXO_MONGO_DB_NAME  | NO        | `chat`        | the mongodb database name to use for eXo Chat                                                      |
-| EXO_MONGO_TIMEOUT  | NO        | `60`          | the number of seconds to wait for mongodb availability before cancelling eXo startup               |
-
-INFO: an external MongoDB server should be installed
-
-#### standalone
-
-With eXo Chat standalone mode, only the client part of the chat feature is installed in eXo container. The server part must be installed separately in another container ([doc](https://github.com/exo-docker/exo-chat-server)).
-
-- add-on to install : `exo-chat-client:<VERSION>`
-- eXo Chat standalone : see [exoplatform/chat-server](https://github.com/exo-docker/exo-chat-server) docker image documentation
-
-The following environment variables should be passed to eXo container to configure eXo Chat client :
-
-| VARIABLE                   | MANDATORY | DEFAULT VALUE           | DESCRIPTION                                                                                                            |
-| -------------------------- | --------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| EXO_CHAT_SERVER_URL        | NO        | `http://localhost:8080` | the url of the eXo Chat server (only needed for eXo Chat standalone edition)                                           |
-| EXO_CHAT_SERVER_PASSPHRASE | NO        | `something2change`      | the passphrase to secure the communication with eXo Chat standalone server (only used for eXo Chat standalone edition) |
 
 ### ElasticSearch
 
@@ -517,13 +465,13 @@ The prerequisites are :
 We provide some docker-compose files for testing various configurations in the test folder
 
 ```bash
-# eXo Platform 4.4.x + hsqldb + mongodb 3.2
+# eXo Platform 4.4.x + hsqldb
 docker-compose -f test/docker-compose-44-hsqldb.yml -p exo44hsqldb up
 
-# eXo Platform 4.4.x + MySQL 5.6 + mongodb 3.2
+# eXo Platform 4.4.x + MySQL 5.6
 docker-compose -f test/docker-compose-44-mysql.yml -p exo44mysql up
 
-# eXo Platform 4.4.x + PostgreSQL 9.4 + mongodb 3.2
+# eXo Platform 4.4.x + PostgreSQL 9.4
 docker-compose -f test/docker-compose-44-pgsql.yml -p exo44pgsql up
 ```
 
@@ -538,11 +486,11 @@ The simplest way to build this image is to use default values :
 
     docker build -t exoplatform/exo-enterprise .
 
-This will produce an image with the current eXo Platform enterprise version and 3 bundled add-ons : eXo Chat, eXo Tasks, eXo Remote Edit.
+This will produce an image with the current eXo Platform enterprise version and the bundled JDBC driver add-ons.
 
 | ARGUMENT NAME    | MANDATORY | DEFAULT VALUE                        | DESCRIPTION                                                   |
 | ---------------- | --------- | ------------------------------------ | ------------------------------------------------------------- |
-| ADDONS           | NO        | `exo-chat exo-tasks exo-remote-edit` | a space separated list of add-ons to install                  |
+| ADDONS           | NO        | `exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.5` | a space separated list of add-ons to install                  |
 | EXO_VERSION      | NO        | latest stable version                | the full version number of the eXo Platform to package        |
 | DOWNLOAD_URL     | NO        | public download url                  | the full url where the eXo Platform binary must be downloaded |
 | DOWNLOAD_USER    | NO        | -                                    | a username to use for downloading the eXo Platform binary     |
@@ -556,7 +504,7 @@ If you want to bundle a particular list of add-ons :
 
 ```bash
 docker build \
-  --build-arg ADDONS="exo-chat exo-staging-extension:2.6.0" \
+  --build-arg ADDONS="exo-jdbc-driver-postgresql:2.5.5 exo-staging-extension:2.6.0" \
   -t exoplatform/exo-enterprise:my_version .
 ```
 

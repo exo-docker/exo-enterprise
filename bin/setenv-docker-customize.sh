@@ -34,21 +34,6 @@ add_in_exo_configuration() {
   echo "${P1}" >> ${EXO_CONFIG_FILE}
 }
 
-# $1 : the full line content to insert at the end of Chat configuration file
-add_in_chat_configuration() {
-  local _CONFIG_FILE="/etc/exo/chat.properties"
-  local P1="$1"
-  if [ ! -f ${_CONFIG_FILE} ]; then
-    echo "Creating Chat configuration file [${_CONFIG_FILE}]"
-    touch ${_CONFIG_FILE}
-    if [ $? != 0 ]; then
-      echo "Problem during Chat configuration file creation, startup aborted !"
-      exit 1
-    fi
-  fi
-  echo "${P1}" >> ${_CONFIG_FILE}
-}
-
 # Check exo.propeties whather intialized or not before the server startup to avoid misconfiguration issues
 check_exo_properties() {
   if [ -f /etc/exo/exo.properties ] && ! grep -q '[^[:space:]]' /etc/exo/exo.properties; then 
@@ -174,18 +159,6 @@ esac
 [ -z "${EXO_JMX_PASSWORD}" ] && EXO_JMX_PASSWORD="-"
 
 [ -z "${EXO_ACCESS_LOG_ENABLED}" ] && EXO_ACCESS_LOG_ENABLED="false"
-
-[ -z "${EXO_MONGO_TIMEOUT}" ] && EXO_MONGO_TIMEOUT="60"
-[ -z "${EXO_MONGO_HOST}" ] && EXO_MONGO_HOST="mongo"
-[ -z "${EXO_MONGO_PORT}" ] && EXO_MONGO_PORT="27017"
-[ -z "${EXO_MONGO_USERNAME}" ] && EXO_MONGO_USERNAME="-"
-[ -z "${EXO_MONGO_PASSWORD}" ] && EXO_MONGO_PASSWORD="-"
-[ -z "${EXO_MONGO_DB_NAME}" ] && EXO_MONGO_DB_NAME="chat"
-
-[ -z "${EXO_CHAT_SERVER_STANDALONE}" ] && EXO_CHAT_SERVER_STANDALONE="false"
-[ -z "${EXO_CHAT_SERVER_URL}" ] && EXO_CHAT_SERVER_URL="http://localhost:8080"
-[ -z "${EXO_CHAT_SERVICE_URL}" ] && EXO_CHAT_SERVICE_URL=""
-[ -z "${EXO_CHAT_SERVER_PASSPHRASE}" ] && EXO_CHAT_SERVER_PASSPHRASE="something2change"
 
 [ -z "${EXO_ES_TIMEOUT}" ] && EXO_ES_TIMEOUT="60"
 [ -z "${EXO_ES_SCHEME}" ] && EXO_ES_SCHEME="http"
@@ -562,69 +535,6 @@ else
   fi
 
 
-  # eXo Chat configuration
-  add_in_chat_configuration "# eXo Chat server configuration"
-  # The password to access REST service on the eXo Chat server.
-  add_in_chat_configuration "chatPassPhrase=${EXO_CHAT_SERVER_PASSPHRASE}"
-  # The eXo group who can create teams.
-  add_in_chat_configuration "teamAdminGroup=/platform/users"
-  # We must override this to remain inside the docker container (works only for embedded chat server)
-  add_in_chat_configuration "chatServerUrl=${EXO_CHAT_SERVER_URL}/chatServer"
-
-  add_in_chat_configuration "# eXo Chat client configuration"
-  # Time interval to refresh messages in a chat.
-  add_in_chat_configuration "chatIntervalChat=3000"
-  # Time interval to keep a chat session alive in milliseconds.
-  add_in_chat_configuration "chatIntervalSession=60000"
-  # Time interval to refresh user status in milliseconds.
-  add_in_chat_configuration "chatIntervalStatus=20000"
-  # Time interval to refresh Notifications in the main menu in milliseconds.
-  add_in_chat_configuration "chatIntervalNotif=3000"
-  # Time interval to refresh Users list in milliseconds.
-  add_in_chat_configuration "chatIntervalUsers=5000"
-  # Time after which a token will be invalid. The use will then be considered offline.
-  add_in_chat_configuration "chatTokenValidity=30000"
-
-  if [ "${EXO_CHAT_SERVER_STANDALONE}" = "false" ]; then
-    # Mongodb configuration (for the Chat)
-    add_in_chat_configuration "# eXo Chat mongodb configuration"
-    add_in_chat_configuration "dbServerHosts=${EXO_MONGO_HOST}:${EXO_MONGO_PORT}"
-    add_in_chat_configuration "dbName=${EXO_MONGO_DB_NAME}"
-    if [ "${EXO_MONGO_USERNAME:-}" = "-" ]; then
-      add_in_chat_configuration "dbAuthentication=false"
-      add_in_chat_configuration "#dbUser="
-      add_in_chat_configuration "#dbPassword="
-    else
-      add_in_chat_configuration "dbAuthentication=true"
-      add_in_chat_configuration "dbUser=${EXO_MONGO_USERNAME}"
-      add_in_chat_configuration "dbPassword=${EXO_MONGO_PASSWORD}"
-    fi
-
-    # The notifications are cleaned up every one hour by default.
-    add_in_chat_configuration "chatCronNotifCleanup=0 0 * * * ?"
-    # When a user reads a chat, the application displays messages of some days in the past.
-    add_in_chat_configuration "chatReadDays=30"
-
-  else
-
-    # Remove the full chat-application addon and install only the client part
-    # Detect the previously installed version
-    if [ -f /opt/exo/addons/statuses/exo-chat.status ]; then
-      EXO_CHAT_VERSION="$(jq -r ".version" /opt/exo/addons/statuses/exo-chat.status)"
-      echo "[WARN] Automatically replacing exo-chat:${EXO_CHAT_VERSION} addon by exo-chat-client:${EXO_CHAT_VERSION} (EXO_CHAT_SERVER_STANDALONE=true)"
-      EXO_ADDONS_REMOVE_LIST="${EXO_ADDONS_REMOVE_LIST:-},exo-chat"
-      EXO_ADDONS_LIST="${EXO_ADDONS_LIST:-},exo-chat-client:${EXO_CHAT_VERSION}"
-    fi
-
-    [ -z "${EXO_CHAT_SERVICE_URL}" ] && EXO_CHAT_SERVICE_URL="http://localhost:8080"
-
-    # Force standalone configuration
-    add_in_chat_configuration "# eXo Chat server configuration"
-    add_in_chat_configuration "standaloneChatServer=true"
-    add_in_chat_configuration "chatServiceUrl=${EXO_CHAT_SERVICE_URL}"
-
-  fi
-
   # eXo Rewards
   add_in_exo_configuration "# Rewards configuration"
   add_in_exo_configuration "exo.wallet.admin.key=${EXO_REWARDS_WALLET_ADMIN_KEY}"
@@ -888,13 +798,6 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Change chat add-on security token at each start
-# -----------------------------------------------------------------------------
-if [ -f /etc/exo/chat.properties ] && [ "${EXO_CHAT_SERVER_STANDALONE}" = "false" ]; then
-  sed -i 's/^chatPassPhrase=.*$/chatPassPhrase='"$(tr -dc '[:alnum:]' < /dev/urandom  | dd bs=4 count=6 2>/dev/null)"'/' /etc/exo/chat.properties
-fi
-
-# -----------------------------------------------------------------------------
 # Define a better place for eXo Platform license file
 # -----------------------------------------------------------------------------
 CATALINA_OPTS="${CATALINA_OPTS:-} -Dexo.license.path=/etc/exo"
@@ -989,18 +892,6 @@ case "${EXO_DB_TYPE}" in
     fi
     ;;
 esac
-
-# Wait for mongodb availability (if chat is installed)
-if [ -f /opt/exo/addons/statuses/exo-chat.status && "${EXO_CHAT_SERVER_STANDALONE:-false}" = "false" ]; then
-  echo "Waiting for mongodb availability at ${EXO_MONGO_HOST}:${EXO_MONGO_PORT} ..."
-  wait-for ${EXO_MONGO_HOST}:${EXO_MONGO_PORT} -s -t ${EXO_MONGO_TIMEOUT}
-  if [ $? != 0 ]; then
-    echo "[ERROR] The mongodb database ${EXO_MONGO_HOST}:${EXO_MONGO_PORT} was not available within ${EXO_MONGO_TIMEOUT}s ! eXo startup aborted ..."
-    exit 1
-  else
-    echo "Mongodb is available, continue starting..."
-  fi
-fi
 
 # Wait for elasticsearch availability
 echo "Waiting for external elastic search availability at ${EXO_ES_HOST}:${EXO_ES_PORT} ..."

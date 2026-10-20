@@ -31,17 +31,11 @@ services:
       - "10002:10002"
     links:
       - db
-      - mongo
       - search
     depends_on:
       - db
-      - mongo
       - search
       - mail
-  mongo:
-    extends:
-      file: common-plf70-stack.yml
-      service: mongo
   db:
     extends:
       file: common-plf70-stack.yml
@@ -59,14 +53,11 @@ services:
     extends:
       file: common-plf70-stack.yml
       service: mail
-    depends_on:
-      - mongo
 volumes:
   exo_data:
   exo_codec:
   exo_logs:
   db_data:
-  mongo_data:
   search_data:
 networks:
   front:
