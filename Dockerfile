@@ -20,7 +20,7 @@ ARG YQ_VERSION=v4.53.3
 # Install the needed packages
 RUN apk update && \
   apk upgrade && \
-  apk add --no-cache xmlstarlet jq bash curl tini && \
+  apk add --no-cache xmlstarlet jq bash curl tini ffmpeg && \
   apk --no-cache add msttcorefonts-installer fontconfig && \
   update-ms-fonts &&  fc-cache -f
 
