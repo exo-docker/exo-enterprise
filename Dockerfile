@@ -35,8 +35,7 @@ RUN apt-get -qq update && \
   apt-get -qq -y install --no-install-recommends ${_APT_OPTIONS} \
     curl \
     unzip \
-    ca-certificates \
-    ffmpeg && \
+    ca-certificates && \
   apt-get -qq -y clean && \
   rm -rf /var/lib/apt/lists/*
 
@@ -120,7 +119,8 @@ RUN apt-get -qq update && \
     curl \
     ca-certificates \
     ttf-mscorefonts-installer \
-    fontconfig && \
+    fontconfig \
+    ffmpeg && \
   apt-get -qq -y autoremove && \
   apt-get -qq -y clean && \
   rm -rf /var/lib/apt/lists/*
