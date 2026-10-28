@@ -15,7 +15,7 @@ LABEL org.opencontainers.image.authors="eXo Platform <docker@exoplatform.com>" \
       org.opencontainers.image.vendor="eXo Platform" \
       org.opencontainers.image.source="https://github.com/exo-docker/exo-enterprise"
 
-ARG YQ_VERSION=v4.53.3
+ARG YQ_VERSION=v4.53.6
 
 # Install the needed packages
 RUN apk update && \
@@ -33,9 +33,9 @@ RUN ARCH=$(apk --print-arch) && \
     esac && \
     \
     if [ "$YQ_ARCH" = "amd64" ]; then \
-        YQ_SHA256="fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4"; \
+        YQ_SHA256="c5f056448f973ae7d39b5401949648a78f2dc1947d6a8eb65be60d5c504b9385"; \
     elif [ "$YQ_ARCH" = "arm64" ]; then \
-        YQ_SHA256="578648e463a11c1b6db6010cbf41eafed6bee79466fcffa1bb446672cf7945ea"; \
+        YQ_SHA256="88a1016bc1d657375a35864e4f44b6f333df8ff97b559f51bba0adcb2169df09"; \
     fi && \
     \
     curl -fsSL -o /usr/bin/yq \
@@ -57,6 +57,11 @@ ARG EXO_VERSION=7.3.0-M16
 ARG DOWNLOAD_URL
 # this allow to specifiy a user to download a protected binary
 ARG DOWNLOAD_USER
+# Optional: expected sha256 of the downloaded archive, overriding the
+# ${DOWNLOAD_URL}.sha256 sidecar published by downloads.exoplatform.org
+# (auto-fetched and verified by default; a warning is printed only if
+# neither is available, e.g. a custom mirror with no published checksum).
+ARG EXO_ZIP_SHA256
 # allow to override the list of addons to package by default
 ARG ADDONS="exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.5"
 # Default base directory on the plf archive
@@ -94,6 +99,15 @@ RUN if [ -n "${DOWNLOAD_USER}" ]; then PARAMS="-u ${DOWNLOAD_USER}"; fi && \
   DOWNLOAD_URL="https://downloads.exoplatform.org/public/releases/platform/${EXO_VERSION_SHORT}/${EXO_VERSION}/platform-${EXO_VERSION}.zip"; \
   fi && \
   curl ${PARAMS} -sS -L -o /srv/downloads/eXo-Platform-${EXO_VERSION}.zip ${DOWNLOAD_URL} && \
+  if [ -z "${EXO_ZIP_SHA256}" ]; then \
+  EXO_ZIP_SHA256=$(curl -fsSL "${DOWNLOAD_URL}.sha256" 2>/dev/null | awk '{print $1}'); \
+  fi && \
+  if [ -n "${EXO_ZIP_SHA256}" ]; then \
+  echo "${EXO_ZIP_SHA256}  /srv/downloads/eXo-Platform-${EXO_VERSION}.zip" | sha256sum -c - \
+  || { echo "ERROR: the downloaded eXo Platform archive does not match its expected sha256 checksum !!"; exit 1; }; \
+  else \
+  echo "WARNING: no sha256 checksum available (none provided via EXO_ZIP_SHA256 and none published at ${DOWNLOAD_URL}.sha256), skipping integrity verification"; \
+  fi && \
   unzip -q /srv/downloads/eXo-Platform-${EXO_VERSION}.zip -d /srv/downloads/ && \
   rm -f /srv/downloads/eXo-Platform-${EXO_VERSION}.zip && \
   mv /srv/downloads/${ARCHIVE_BASE_DIR} ${EXO_APP_DIR} && \
@@ -120,7 +134,10 @@ RUN chmod 755 ${EXO_APP_DIR}/bin/setenv-docker-customize.sh && \
 
 USER ${EXO_USER}
 
-RUN for a in ${ADDONS}; do echo "Installing addon $a"; /opt/exo/addon install $a; done
+RUN for a in ${ADDONS}; do \
+      echo "Installing addon $a"; \
+      /opt/exo/addon install $a || { echo "ERROR: failed to install addon $a"; exit 1; }; \
+    done
 
 WORKDIR ${EXO_LOG_DIR}
 ENTRYPOINT ["/sbin/tini", "--"]
