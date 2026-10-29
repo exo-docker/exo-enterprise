@@ -9,13 +9,11 @@ services:
     ports: 
       - "80:80"
     links:
-      - exo-chat
       - exo-cluster-node1
       - exo-cluster-node2
     depends_on: 
       - exo-cluster-node1
       - exo-cluster-node2
-      - exo-chat
       - exo-mail
     networks:
       - front
@@ -28,15 +26,6 @@ services:
     environment:
       # - Addon wallet deleted temporarly because it needs internet connection
       EXO_ADDONS_REMOVE_LIST: meeds-wallet
-      # Chat in standalone mode
-      EXO_CHAT_SERVER_STANDALONE: "true"
-      # This is the addon version of exo-chat-client that will be downloaded from catalog
-      EXO_CHAT_VERSION: "3.1.x-SNAPSHOT"
-      EXO_CHAT_SERVER_PASSPHRASE: change-this-password
-      # Chat URL for Browser
-      EXO_CHAT_SERVER_URL: http://localhost
-      # Chat URL for eXo Servers to communicate with exo-chat standalone
-      EXO_CHAT_SERVICE_URL: http://exo-chat:8080/chatServer
       # Elasticsearch in standalone mode
       EXO_ES_HOST: exo-elasticsearch
       # Clustering activation
@@ -72,19 +61,14 @@ services:
       EXO_ES_INDEX_SHARD_NB: 1
     expose:
       - "8080"
-    links:
-      - exo-chat
     depends_on:
       - exo-db
       - exo-elasticsearch
       - exo-mail
-      - exo-chat
     networks:
       - front
       - back
       - mail
-    # Wait until chat server is started
-    command: ["wait-for", "exo-chat:8080", "-s", "-t", "360", "--", "/opt/exo/start_eXo.sh"]
   exo-cluster-node2:
     image: exoplatform/exo-enterprise:6.2.0-clustering_latest
     volumes:
@@ -93,15 +77,6 @@ services:
     environment:
       # - Addon wallet deleted temporarly because it needs internet connection
       EXO_ADDONS_REMOVE_LIST: meeds-wallet
-      # Chat in standalone mode
-      EXO_CHAT_SERVER_STANDALONE: "true"
-      # This is the addon version of exo-chat-client that will be downloaded from catalog
-      EXO_CHAT_VERSION: "3.1.x-SNAPSHOT"
-      EXO_CHAT_SERVER_PASSPHRASE: change-this-password
-      # Chat URL for Browser
-      EXO_CHAT_SERVER_URL: http://localhost
-      # Chat URL for eXo Servers to communicate with exo-chat standalone
-      EXO_CHAT_SERVICE_URL: http://exo-chat:8080/chatServer
       # Elasticsearch in standalone mode
       EXO_ES_HOST: exo-elasticsearch
       # Clustering activation
@@ -137,45 +112,16 @@ services:
       EXO_ES_INDEX_SHARD_NB: 1
     expose:
       - "8080"
-    links:
-      - exo-chat
     depends_on:
       - exo-db
       - exo-elasticsearch
       - exo-mail
-      - exo-chat
     networks:
       - front
       - back
       - mail
     # Wait until first cluster node starts to avoid conflicts
     command: ["wait-for", "exo-cluster-node1:8080", "-s", "-t", "360", "--", "/opt/exo/start_eXo.sh"]
-  exo-chat:
-    image: exoplatform/chat-server:latest
-    environment:
-      CHAT_PORTAL_PAGE: /portal/dw/chat
-      CHAT_PASSPHRASE: change-this-password
-      CHAT_MONGO_DB_HOST: exo-mongo
-      CHAT_MONGO_DB_PORT: 27017
-      CHAT_SMTP_HOST: exo-mail
-      CHAT_SMTP_PORT: 1025
-    expose:
-      - "8080"
-    volumes:
-      - ./logs/exo-chat/:/opt/chat-server/logs/:rw
-    depends_on:
-      - exo-mongo
-      - exo-mail
-    networks:
-      - front
-      - back
-      - mail
-  exo-mongo:
-    image: mongo:4.0
-    volumes:
-      - ./data/mongodb/:/data/db/:rw
-    networks:
-      - back
   exo-db:
     image: mysql:8.0
     volumes:
