@@ -1,4 +1,3 @@
-version: "2"
 services:
   web:
     image: nginx:1.25-alpine
@@ -10,7 +9,7 @@ services:
       - front
       - mail
   exo:
-    image: exoplatform/exo-enterprise:develop
+    image: exoplatform/exo-enterprise:7.0_latest
     environment:
       EXO_DB_NAME: exo
       EXO_DB_USER: exo
