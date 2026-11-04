@@ -63,7 +63,7 @@ ARG DOWNLOAD_USER
 # neither is available, e.g. a custom mirror with no published checksum).
 ARG EXO_ZIP_SHA256
 # allow to override the list of addons to package by default
-ARG ADDONS="exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.5"
+ARG ADDONS="exo-jdbc-driver-mysql:2.3.1 exo-jdbc-driver-postgresql:2.5.5"
 # Default base directory on the plf archive
 ARG ARCHIVE_BASE_DIR=platform-${EXO_VERSION}
 
