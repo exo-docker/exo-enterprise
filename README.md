@@ -500,7 +500,7 @@ This will produce an image with the current eXo Platform enterprise version and 
 
 | ARGUMENT NAME    | MANDATORY | DEFAULT VALUE                        | DESCRIPTION                                                   |
 | ---------------- | --------- | ------------------------------------ | ------------------------------------------------------------- |
-| ADDONS           | NO        | `exo-jdbc-driver-mysql:2.3.0 exo-jdbc-driver-postgresql:2.5.5` | a space separated list of add-ons to install                  |
+| ADDONS           | NO        | `exo-jdbc-driver-mysql:2.3.1 exo-jdbc-driver-postgresql:2.5.5` | a space separated list of add-ons to install                  |
 | EXO_VERSION      | NO        | latest stable version                | the full version number of the eXo Platform to package        |
 | DOWNLOAD_URL     | NO        | public download url                  | the full url where the eXo Platform binary must be downloaded |
 | DOWNLOAD_USER    | NO        | -                                    | a username to use for downloading the eXo Platform binary     |
