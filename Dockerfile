@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
 #
 # Dockerizing base image for eXo Platform hosting offer with:
 #
@@ -9,7 +9,9 @@
 # Run:      docker run -ti --rm --name=exo -p 80:8080 exoplatform/exo-enterprise
 #           docker run -d --name=exo -p 80:8080 exoplatform/exo-enterprise
 
-ARG BASE_IMAGE=exoplatform/jdk:openjdk-21-ubuntu-2604
+# pinned by digest for reproducible builds; refresh with:
+#   docker buildx imagetools inspect exoplatform/jdk:openjdk-21-ubuntu-2604
+ARG BASE_IMAGE=exoplatform/jdk:openjdk-21-ubuntu-2604@sha256:3974b3a1e4f7f046be1f5fbd25224926072acd55b65068fdb3ac58a05c39886f
 
 # Fetch & unpack the eXo Platform archive, kept in its own stage so
 # build-only tools (curl, unzip) never ship in the runtime image
@@ -31,13 +33,14 @@ ARG EXO_ZIP_SHA256
 # extra options passed to every apt-get install (e.g. proxy config: -o Acquire::http::Proxy=...)
 ARG _APT_OPTIONS
 
-RUN apt-get -qq update && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  rm -f /etc/apt/apt.conf.d/docker-clean && \
+  apt-get -qq update && \
   apt-get -qq -y install --no-install-recommends ${_APT_OPTIONS} \
     curl \
     unzip \
-    ca-certificates && \
-  apt-get -qq -y clean && \
-  rm -rf /var/lib/apt/lists/*
+    ca-certificates
 
 # Download eXo Platform.
 # Credentials for a protected DOWNLOAD_URL can be supplied two ways:
@@ -109,7 +112,10 @@ ENV EXO_APP_DIR=/opt/exo \
 RUN useradd --create-home -u 999 --user-group --shell /bin/bash --no-log-init ${EXO_USER}
 
 # Install the needed packages
-RUN apt-get -qq update && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  rm -f /etc/apt/apt.conf.d/docker-clean && \
+  apt-get -qq update && \
   apt-get -qq -y install --no-install-recommends ${_APT_OPTIONS} debconf-utils && \
   echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
   echo "ttf-mscorefonts-installer msttcorefonts/present-mscorefonts-eula note" | debconf-set-selections && \
@@ -120,10 +126,7 @@ RUN apt-get -qq update && \
     ca-certificates \
     ttf-mscorefonts-installer \
     fontconfig \
-    ffmpeg && \
-  apt-get -qq -y autoremove && \
-  apt-get -qq -y clean && \
-  rm -rf /var/lib/apt/lists/*
+    ffmpeg
 
 # Download yq with architecture detection and checksum verification
 RUN YQ_ARCH=$(dpkg --print-architecture) && \
@@ -148,10 +151,8 @@ RUN rm -f /usr/bin/pebble \
     && rm -rf /etc/pebble
 
 # Create needed directories
-RUN mkdir -p ${EXO_DATA_DIR}         && chown ${EXO_USER}:${EXO_GROUP} ${EXO_DATA_DIR} && \
-  mkdir -p ${EXO_SHARED_DATA_DIR}  && chown ${EXO_USER}:${EXO_GROUP} ${EXO_SHARED_DATA_DIR} && \
-  mkdir -p ${EXO_TMP_DIR}          && chown ${EXO_USER}:${EXO_GROUP} ${EXO_TMP_DIR}  && \
-  mkdir -p ${EXO_LOG_DIR}          && chown ${EXO_USER}:${EXO_GROUP} ${EXO_LOG_DIR}
+RUN install -d -o ${EXO_USER} -g ${EXO_GROUP} \
+    ${EXO_DATA_DIR} ${EXO_SHARED_DATA_DIR} ${EXO_TMP_DIR} ${EXO_LOG_DIR}
 
 # Install eXo Platform (built in the "downloader" stage above)
 COPY --from=downloader --chown=${EXO_USER}:${EXO_GROUP} /tmp/exo-app ${EXO_APP_DIR}
@@ -160,9 +161,8 @@ RUN ln -s ${EXO_APP_DIR}/gatein/conf ${EXO_CONF_DIR} && \
   rm -rf ${EXO_APP_DIR}/logs && ln -s ${EXO_LOG_DIR} ${EXO_APP_DIR}/logs
 
 # Install Docker customization file
-COPY --chown=${EXO_USER}:${EXO_GROUP} bin/setenv-docker-customize.sh ${EXO_APP_DIR}/bin/setenv-docker-customize.sh
-RUN chmod 755 ${EXO_APP_DIR}/bin/setenv-docker-customize.sh && \
-  sed -i '/# Load custom settings/i \
+COPY --chown=${EXO_USER}:${EXO_GROUP} --chmod=755 bin/setenv-docker-customize.sh ${EXO_APP_DIR}/bin/setenv-docker-customize.sh
+RUN sed -i '/# Load custom settings/i \
   \# Load custom settings for docker environment\n\
   [ -r "$CATALINA_BASE/bin/setenv-docker-customize.sh" ] \
   && . "$CATALINA_BASE/bin/setenv-docker-customize.sh" \
