@@ -75,7 +75,7 @@ RUN --mount=type=secret,id=download_password,required=false set -e; \
 # Runtime image
 FROM ${BASE_IMAGE}
 
-ARG YQ_VERSION=v4.53.6
+ARG YQ_VERSION=v4.54.2
 ARG EXO_VERSION=7.3.0-M19
 # allow to override the list of addons to package by default
 ARG ADDONS="exo-jdbc-driver-mysql:2.3.1 exo-jdbc-driver-postgresql:2.5.5"
@@ -128,9 +128,9 @@ RUN apt-get -qq update && \
 # Download yq with architecture detection and checksum verification
 RUN YQ_ARCH=$(dpkg --print-architecture) && \
     if [ "$YQ_ARCH" = "amd64" ]; then \
-        YQ_SHA256="c5f056448f973ae7d39b5401949648a78f2dc1947d6a8eb65be60d5c504b9385"; \
+        YQ_SHA256="44c7759059b4910827a0059a2757b22001e59360cdecdb2ef8dedc4b6c7e9f32"; \
     elif [ "$YQ_ARCH" = "arm64" ]; then \
-        YQ_SHA256="88a1016bc1d657375a35864e4f44b6f333df8ff97b559f51bba0adcb2169df09"; \
+        YQ_SHA256="bd44211dcd29a5f0eb701d4b7eb5ccd0cfff3bd3966cb4f7f9bd5b13701d997e"; \
     else \
         echo "Unsupported architecture: $YQ_ARCH"; exit 1; \
     fi && \
