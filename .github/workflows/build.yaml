@@ -1,0 +1,51 @@
+name: Build check
+
+# Validation-only build: builds the image with exo-actions/buildDockerImage-action
+# but never pushes it (push: false). Publishing stays in publish.yaml.
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - bin/**
+      - .github/workflows/build.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOCKER_IMAGE: "exoplatform/exo-enterprise"
+
+jobs:
+  build:
+    name: "Build ${{ matrix.platform }} (no push)"
+    runs-on: ${{ matrix.runner }}
+    # Secrets are not available to PRs from forks, and the action logs in to the registry
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: exo-actions/buildDockerImage-action/build-and-push-image@v1
+        with:
+          dockerImage: ${{ env.DOCKER_IMAGE }}
+          dockerImageTag: ci-${{ github.run_id }}
+          platforms: ${{ matrix.platform }}
+          qemu: "false"
+          push: "false"
+          generateSBOM: "false"
+          generateProvenance: "false"
+          buildArgs: |
+            VCS_REF=${{ github.sha }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
