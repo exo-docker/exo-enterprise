@@ -9,9 +9,11 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
-# contents: write is needed to push develop. Nothing else is granted.
+# The default GITHUB_TOKEN can't push to develop (protected: pull request
+# required), so the push uses the SWF_TOKEN secret, whose owner can bypass
+# that rule. The workflow token itself stays read-only.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: sync-develop
@@ -26,6 +28,8 @@ jobs:
         with:
           ref: develop
           fetch-depth: 0
+          # credentials persisted for the push below
+          token: ${{ secrets.SWF_TOKEN }}
 
       - name: Fast-forward develop
         env:
