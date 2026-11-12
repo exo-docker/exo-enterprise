@@ -18,7 +18,7 @@ ARG BASE_IMAGE=exoplatform/jdk:openjdk-21-ubuntu-2604@sha256:3974b3a1e4f7f046be1
 FROM ${BASE_IMAGE} AS downloader
 
 # Build Arguments and environment variables
-ARG EXO_VERSION=7.3.0-M17
+ARG EXO_VERSION=7.3.0-M20
 # this allow to specify an eXo Platform download url
 ARG DOWNLOAD_URL
 # this allow to specifiy a user to download a protected binary
@@ -78,8 +78,8 @@ RUN --mount=type=secret,id=download_password,required=false set -e; \
 # Runtime image
 FROM ${BASE_IMAGE}
 
-ARG YQ_VERSION=v4.53.6
-ARG EXO_VERSION=7.3.0-M17
+ARG YQ_VERSION=v4.54.3
+ARG EXO_VERSION=7.3.0-M20
 # allow to override the list of addons to package by default
 ARG ADDONS="exo-jdbc-driver-mysql:2.3.1 exo-jdbc-driver-postgresql:2.5.5"
 # OCI image metadata, e.g.: --build-arg VCS_REF=$(git rev-parse --short HEAD) --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -131,9 +131,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # Download yq with architecture detection and checksum verification
 RUN YQ_ARCH=$(dpkg --print-architecture) && \
     if [ "$YQ_ARCH" = "amd64" ]; then \
-        YQ_SHA256="c5f056448f973ae7d39b5401949648a78f2dc1947d6a8eb65be60d5c504b9385"; \
+        YQ_SHA256="129534601871538efe0ba4c5e62a34fb1d5f469bcb975c4fddeb467d82974973"; \
     elif [ "$YQ_ARCH" = "arm64" ]; then \
-        YQ_SHA256="88a1016bc1d657375a35864e4f44b6f333df8ff97b559f51bba0adcb2169df09"; \
+        YQ_SHA256="89f69310b61b68d1245065a1241d1fc843f7a36cd6103ffd77ad987613bd1b67"; \
     else \
         echo "Unsupported architecture: $YQ_ARCH"; exit 1; \
     fi && \
