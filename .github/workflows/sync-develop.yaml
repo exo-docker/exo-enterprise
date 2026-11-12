@@ -1,0 +1,35 @@
+name: Sync develop with master
+
+# Keeps develop and master on the exact same commit: every push to master
+# fast-forwards develop to it. Fast-forward only (no merge commit), so the
+# SHAs stay identical. If develop has commits that are not on master the
+# job fails instead of rewriting history; fix it by hand.
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+# contents: write is needed to push develop. Nothing else is granted.
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-develop
+  cancel-in-progress: false
+
+jobs:
+  fast-forward-develop:
+    name: Fast-forward develop to master
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Fast-forward develop
+        env:
+          MASTER_SHA: ${{ github.sha }}
+        run: |
+          git merge --ff-only "$MASTER_SHA"
+          git push origin develop
