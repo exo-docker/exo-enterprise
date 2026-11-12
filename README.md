@@ -498,6 +498,13 @@ The simplest way to build this image is to use default values :
 
 This will produce an image with the current eXo Platform enterprise version and the bundled JDBC driver add-ons.
 
+A [`docker-bake.hcl`](docker-bake.hcl) is also provided for `docker buildx bake` (nothing is pushed unless you pass `--push`):
+
+    docker buildx bake              # host arch, loaded into the local docker as exoplatform/exo-enterprise:local
+    docker buildx bake multiarch    # amd64 + arm64 with SBOM and provenance attestations, build cache only
+    EXO_VERSION=7.3.0-M18 docker buildx bake   # override the version (default: the Dockerfile's EXO_VERSION)
+    docker buildx build --check .   # lint the Dockerfile
+
 | ARGUMENT NAME    | MANDATORY | DEFAULT VALUE                        | DESCRIPTION                                                   |
 | ---------------- | --------- | ------------------------------------ | ------------------------------------------------------------- |
 | ADDONS           | NO        | `exo-jdbc-driver-mysql:2.3.1 exo-jdbc-driver-postgresql:2.5.5` | a space separated list of add-ons to install                  |

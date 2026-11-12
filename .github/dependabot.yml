@@ -8,3 +8,11 @@ updates:
     schedule:
       # Check for updates to GitHub Actions every week
       interval: "weekly"
+
+  # Keeps the pinned "# syntax=docker/dockerfile" digest fresh. The base image
+  # is referenced through the BASE_IMAGE build arg, which Dependabot cannot
+  # resolve: refresh its digest manually (see the comment in the Dockerfile).
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
