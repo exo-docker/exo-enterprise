@@ -11,7 +11,7 @@
 
 # pinned by digest for reproducible builds; refresh with:
 #   docker buildx imagetools inspect exoplatform/jdk:openjdk-21-ubuntu-2604
-ARG BASE_IMAGE=exoplatform/jdk:openjdk-21-ubuntu-2604@sha256:3974b3a1e4f7f046be1f5fbd25224926072acd55b65068fdb3ac58a05c39886f
+ARG BASE_IMAGE=exoplatform/jdk:openjdk-25-ubuntu-2604@sha256:c6728997049e271acf61203ba4c243b70f9438babac94cbe3a041cb2d82d86d4
 
 # Fetch & unpack the eXo Platform archive, kept in its own stage so
 # build-only tools (curl, unzip) never ship in the runtime image
