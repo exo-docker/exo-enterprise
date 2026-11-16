@@ -211,6 +211,9 @@ The following environment variables can be passed to the container to configure 
 | EXO_GZIP_ENABLED       | NO        | `true`        | activate Tomcat Gzip compression for assets mimetypes                        |
 | EXO_CONNECTION_TIMEOUT | NO        | `20000`       | Tomcat Connection timeout                                                    |
 | EXO_SESSION_TIMEOUT    | NO        | `30`          | Tomcat session timeout (minutes)                                             |
+| EXO_LOADING_PAGE       | NO        | `true`        | serve a loading page on the HTTP port while the platform starts (true / false) |
+
+The loading page is served on the HTTP port while the platform starts (animated progress, 503 + `Retry-After`, reloads itself when the platform answers). Set `EXO_LOADING_PAGE=false` to restore the previous behavior (port closed until the platform is up): a TCP-level probe then sees the node up only when it is ready, whereas with the loading page a probe must wait for a non-503 answer. Its logo and colors can be replaced by mounting `logo.png`, `logo-dark.png` and `branding.properties` in `/etc/exo/loading`.
 
 #### Valves and Listeners <!-- omit in toc -->
 
