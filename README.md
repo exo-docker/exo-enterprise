@@ -31,6 +31,7 @@ The image is compatible with the following databases system :  `MySQL` (default)
   - [Agenda](#agenda)
   - [License](#license)
   - [exo.properties](#exoproperties)
+    - [Secrets in exo.properties](#secrets-in-exoproperties)
 - [Testing](#testing)
 - [Image build](#image-build)
 
@@ -458,6 +459,27 @@ services:
 ```
 
 In order to prevent misconfiguration issues while using `exo.properties`. an empty check can be ensured by `EXO_STRICT_CHECK_CONF` (`true` or `false` (default)) before server startup.
+
+#### Secrets in exo.properties
+
+Docker secrets are mounted as files, so a sensitive value (a password...) can't be written in a mounted `exo.properties`. A value of the form `secret-file:/path/to/file` is replaced by the content of that file, without its trailing line breaks:
+
+```properties
+exo.email.smtp.password=secret-file:/run/secrets/smtp_password
+```
+
+- This applies to the files listed in `properties.urls` (such as `/etc/exo/exo.properties`), not to the file given by `properties.url` / `exo.properties.url`, whose values are used as is.
+- A missing or unreadable file is handled according to the mode (the content is never logged):
+  - **Lenient mode** (default): the error is logged and the entry is ignored. The property keeps any value set earlier (by a previous file of `properties.urls`), or its default, and the server starts.
+  - **Strict mode**: the startup fails, so the server doesn't start with a missing secret. Enable it with the environment variable `EXO_PROPERTIES_SECRET_FILE_STRICT=true` (default `false`), which sets `exo.properties.secretFile.strict=true` in `/etc/exo/docker.properties` when the container is created for the first time. The system property can also be set as a `-D` JVM option, or in any file listed before the one holding the secrets.
+- The strict flag (`exo.properties.secretFile.strict`) is read before each file of `properties.urls` and only applies to the files listed after the one that sets it: do **not** set it in the same `exo.properties` that holds the secrets (the root container ignores it, then the portal container fails and answers 503).
+- A `${...}` reference to a `secret-file:` property is only reliable when the secret comes from a later file of `properties.urls`.
+
+| VARIABLE                           | MANDATORY | DEFAULT VALUE | DESCRIPTION                                                                                                          |
+| ---------------------------------- | --------- | ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| EXO_PROPERTIES_SECRET_FILE_STRICT  | NO        | `false`       | fail the startup when a `secret-file:` value of `exo.properties` can't be read (`true`), instead of ignoring it (`false`) |
+
+For environment variables, see [Secret / Sensitive Environment Variables](#secret--sensitive-environment-variables).
 
 ## Testing
 
