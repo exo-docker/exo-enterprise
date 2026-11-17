@@ -223,6 +223,13 @@ if [ -f /opt/exo/_done.configuration ]; then
   echo "INFO: Configuration already done! skipping this step."
 else
 
+  # Secret files in exo.properties (secret-file:/path): fail the startup on an unreadable file
+  # instead of ignoring the entry. Written in docker.properties so that it is read before exo.properties
+  if [ "${EXO_PROPERTIES_SECRET_FILE_STRICT:-false}" = "true" ]; then
+    add_in_exo_configuration "# Secret files in exo.properties"
+    add_in_exo_configuration "exo.properties.secretFile.strict=true"
+  fi
+
   # Jcr storage configuration
   add_in_exo_configuration "# JCR storage configuration"
   if [ ! -z ${EXO_JCR_FS_STORAGE_ENABLED} ]; then
