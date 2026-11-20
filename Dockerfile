@@ -10,7 +10,7 @@
 #           docker run -d --name=exo -p 80:8080 exoplatform/exo-enterprise
 
 # pinned by digest for reproducible builds; refresh with:
-#   docker buildx imagetools inspect exoplatform/jdk:openjdk-21-ubuntu-2604
+#   docker buildx imagetools inspect exoplatform/jdk:openjdk-25-ubuntu-2604
 ARG BASE_IMAGE=exoplatform/jdk:openjdk-25-ubuntu-2604@sha256:624bee6a4ee262ca0c6e444d131d6bca514ee737c439657995b3c95e92200f9a
 
 # Fetch & unpack the eXo Platform archive, kept in its own stage so
